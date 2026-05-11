@@ -1,0 +1,1173 @@
+﻿<!DOCTYPE html>
+<html lang="uz">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OQQUSH BETON - Professional Beton Ishlari</title>
+  </head>
+  <body>
+    <div id="app">
+      <!-- Navbar -->
+      <nav id="navbar" class="fixed top-0 inset-x-0 z-[1000] transition-all duration-300 py-4 border-b border-white/5 backdrop-blur-2xl bg-black/40">
+        <div class="max-w-7xl mx-auto px-4 md:px-6 flex justify-between items-center gap-4">
+          <a href="#home" class="flex items-center gap-4 group">
+            <div class="relative">
+              <img src="/images/logo.png" alt="Oqqush Logo" class="h-10 md:h-11 w-auto object-contain brightness-125 contrast-125 mix-blend-screen transition-transform duration-500 group-hover:scale-105" />
+              <div class="absolute inset-0 bg-white/5 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+            </div>
+            <div class="flex flex-col font-heading leading-[0.8] tracking-[3px] text-white">
+              <span id="nav-logo-l1" class="text-[19px] md:text-[22px] font-black uppercase">OQQUSH</span>
+              <span id="nav-logo-l2" class="text-[19px] md:text-[22px] font-black uppercase text-white/60">BETON</span>
+            </div>
+          </a>
+          
+          <div class="hidden xl:flex items-center gap-5 text-[10px] font-black uppercase tracking-[1.6px]">
+            <a href="#home" class="hover:text-white text-white/80 transition-colors">Bosh sahifa</a>
+            <a href="#about" class="hover:text-white text-white/80 transition-colors">Biz haqimizda</a>
+            <a href="#services" class="hover:text-white text-white/80 transition-colors">Xizmatlar</a>
+            <a href="#transport" class="hover:text-white text-white/80 transition-colors">Texnika</a>
+            <a href="#products-section" class="hover:text-white text-white/80 transition-colors">Mahsulotlar</a>
+            <a href="#laboratory" class="hover:text-white text-white/80 transition-colors">Laboratoriya</a>
+            <a href="#projects" class="hover:text-white text-white/80 transition-colors">Bajarilgan ishlar</a>
+            <a href="#footer" class="hover:text-white text-white/80 transition-colors">Aloqa</a>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button id="admin-trigger" class="btn-outline !px-4 md:!px-5 !py-2.5 !text-[10px] !font-black !text-white shrink-0">Admin</button>
+            <!-- Mobile Menu Trigger -->
+            <button id="mobile-menu-btn" class="xl:hidden text-white p-2">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+            </button>
+          </div>
+        </div>
+      </nav>
+
+      <!-- Mobile Menu Overlay -->
+      <div id="mobile-menu" class="fixed inset-0 z-[2000] bg-black/95 backdrop-blur-xl flex flex-col items-center justify-center gap-8 -translate-y-full transition-transform duration-500 xl:hidden">
+        <button id="mobile-menu-close" class="absolute top-8 right-8 text-white p-2">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+        <a href="#home" class="mobile-nav-link">Bosh sahifa</a>
+        <a href="#about" class="mobile-nav-link">Biz haqimizda</a>
+        <a href="#services" class="mobile-nav-link">Xizmatlar</a>
+        <a href="#transport" class="mobile-nav-link">Texnika</a>
+        <a href="#products-section" class="mobile-nav-link">Mahsulotlar</a>
+        <a href="#laboratory" class="mobile-nav-link">Laboratoriya</a>
+        <a href="#projects" class="mobile-nav-link">Bajarilgan ishlar</a>
+        <a href="#footer" class="mobile-nav-link">Aloqa</a>
+        <button id="admin-trigger-mobile" class="btn-outline mt-4">Admin Panel</button>
+      </div>
+
+      <!-- Hero Section -->
+      <section id="home" class="relative min-h-screen flex items-center justify-center pt-20 px-6 slideshow-section" data-group="hero">
+        <div class="slide-container"></div>
+        <div class="relative z-10 text-center max-w-4xl reveal">
+           <div class="mb-10 flex justify-center">
+             <div class="relative group p-8 bg-white/5 rounded-3xl border border-white/10 backdrop-blur-sm transition-all duration-700 hover:border-white/20 hover:bg-white/10">
+                <img src="/images/logo.png" alt="Hero Logo" class="h-32 md:h-40 w-auto object-contain brightness-125 contrast-125 transition-transform duration-700 group-hover:scale-110" />
+                <div class="absolute inset-0 bg-white/10 rounded-full blur-3xl opacity-10 -z-10"></div>
+             </div>
+           </div>
+          <div class="inline-block glass px-4 py-1.5 mb-8 text-[10px] uppercase tracking-[4px] font-bold border border-white/10">Professional beton ishlari</div>
+          <h1 id="hero-title" class="text-7xl md:text-[80px] font-heading font-black leading-none mb-8 tracking-[8px] uppercase">OQQUSH BETON</h1>
+          <p id="hero-subtitle" class="text-lg md:text-xl text-gray-300 font-sans font-medium tracking-[2px] mb-12 max-w-3xl mx-auto leading-relaxed drop-shadow-md">
+            O'zbekistondagi eng ishonchli beton quyish kompaniyasi
+          </p>
+          <div class="flex flex-col md:flex-row items-center justify-center gap-6">
+            <a href="#services" class="btn-primary w-full md:w-auto">Xizmatlarni ko'rish</a>
+            <a href="#about" class="btn-outline w-full md:w-auto">Biz haqimizda</a>
+          </div>
+        </div>
+      </section>
+
+      <!-- About Section -->
+      <section id="about" class="relative min-h-screen py-32 px-6 slideshow-section" data-group="about">
+        <div class="slide-container"></div>
+        <div class="relative z-10 max-w-7xl mx-auto">
+          <h2 class="text-6xl md:text-8xl font-heading tracking-[10px] text-white/10 uppercase mb-20 reveal">BIZ HAQIMIZDA</h2>
+          
+          <div class="glass-card p-12 md:p-20 reveal border-l-4 border-l-white/20">
+            <div class="max-w-4xl space-y-12">
+              <div class="space-y-6">
+                <p class="text-xl md:text-2xl text-white font-normal leading-relaxed">
+                  <span class="font-bold border-b-2 border-white/20 pb-1">Oqqush Beton</span> - bu yillar davomida shakllangan ishonch, tajriba va sifatga sodiqlik tamoyillariga asoslangan zamonaviy qurilish kompaniyasi.
+                </p>
+                <p class="text-gray-300 font-normal leading-relaxed text-lg">
+                  Bizning faoliyatimiz faqat beton ishlab chiqarish bilangina cheklanmaydi. Kompaniya sheben mahsulotlari, tayyor beton qorishmalar, turli o'lchamdagi beton plitalar va og'ir texnika xizmatlarini o'z ichiga olgan kompleks yechimlarni taklif etadi.
+                </p>
+              </div>
+
+              <div class="space-y-6">
+                <p class="text-gray-400 font-light leading-relaxed text-lg">
+                  Biz har bir loyihada sifat, ishonchlilik va texnologik aniqlik prinsiplari asosida ishlaymiz. Ishlab chiqarish jarayonlari zamonaviy uskunalar va qat'iy laboratoriya nazorati ostida olib boriladi. Shu bois Oqqush Beton mahsulotlari mustahkamligi, ekologik tozaligi va uzoq xizmat muddati bilan ajralib turadi.
+                </p>
+              </div>
+
+              <div class="space-y-6 pt-8 border-t border-white/5">
+                <p class="text-gray-400 font-light leading-relaxed text-lg">
+                  Kompaniyamiz ishlab chiqarish quvvatlari va og'ir texnika parki orqali yirik hajmdagi buyurtmalarni qisqa muddatda, sifatni pasaytirmasdan bajaradi. Avtobeton aralashtirgichlar, ekskavatorlar, yuk ko'taruvchi texnikalar va boshqa texnika vositalarimiz materiallarni obyektlarga o'z vaqtida yetkazib berishni ta'minlaydi.
+                </p>
+              </div>
+
+              <div class="pt-8 block">
+                <p class="text-white/80 italic font-light leading-relaxed text-lg border-l-2 border-white/10 pl-8">
+                  Biz uchun har bir buyurtma - bu mas'uliyat, har bir mijoz esa - uzoq muddatli hamkor. Shu sababli Oqqush Beton bugun nafaqat qurilish materiallari ishlab chiqaruvchi, balki har bir loyihaning muvaffaqiyatiga hissa qo'shuvchi ishonchli hamkor sifatida tanilgan.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Stats Bar -->
+      <section class="bg-[#111] py-24 relative z-10 border-y border-white/5">
+        <div class="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-16 text-center reveal-stagger">
+          <div class="space-y-3 group">
+            <div id="stat1-val" class="text-7xl font-heading tracking-tighter drop-shadow-lg group-hover:scale-110 transition-transform">500+</div>
+            <div class="text-[10px] font-bold uppercase tracking-[4px] text-gray-400 group-hover:text-white transition-colors">Loyihalar</div>
+          </div>
+          <div class="md:border-x border-white/5 space-y-3 group">
+            <div id="stat2-val" class="text-7xl font-heading tracking-tighter drop-shadow-lg group-hover:scale-110 transition-transform">12</div>
+            <div class="text-[10px] font-bold uppercase tracking-[4px] text-gray-400 group-hover:text-white transition-colors">Yillik tajriba</div>
+          </div>
+          <div class="space-y-3 group">
+            <div id="stat3-val" class="text-7xl font-heading tracking-tighter drop-shadow-lg group-hover:scale-110 transition-transform">100%</div>
+            <div class="text-[10px] font-bold uppercase tracking-[4px] text-gray-400 group-hover:text-white transition-colors">Kafolat</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Services Section -->
+      <section id="services" class="relative min-h-screen py-32 px-6 slideshow-section" data-group="services">
+        <div class="slide-container"></div>
+        <div class="relative z-10 max-w-7xl mx-auto">
+          <h2 class="text-5xl font-heading tracking-[10px] text-white/20 uppercase mb-20 text-right reveal">XIZMATLAR</h2>
+          
+          <div class="grid grid-cols-1 md:grid-cols-12 gap-12 mb-24 reveal items-center">
+            <div class="md:col-span-5">
+              <h3 class="text-6xl md:text-8xl font-heading leading-[0.9] uppercase tracking-tighter">
+                Bizdagi<br/>
+                <span class="text-white/40">mavjud</span><br/>
+                xizmatlar
+              </h3>
+            </div>
+            <div class="md:col-span-1 hidden md:flex justify-center">
+              <div class="w-[2px] h-full bg-white/10 rounded-full min-h-[200px]"></div>
+            </div>
+            <div class="md:col-span-6 space-y-6 text-gray-300 font-normal leading-relaxed">
+              <p>Oqqush Beton sizga qurilishning barcha bosqichlari uchun bir martalik, ishonchli va sifatli yechimlarni taklif etadi.</p>
+              <ul class="space-y-4 text-sm mt-4">
+                <li class="flex gap-4"><span class="text-white font-bold">-</span> Sheben va maydalangan tosh mahsulotlarining turli fraksiyalari - doimiy sifat va o'z vaqtida yetkazib berish.</li>
+                <li class="flex gap-4"><span class="text-white font-bold">-</span> Tayyor beton qorishmalari - loyihadagi yuklamalarga mos, standartlarga javob beruvchi kompozitsiyalar.</li>
+                <li class="flex gap-4"><span class="text-white font-bold">-</span> Beton plitalar va tayyor elementlar - o'lchamlarda aniq, mustahkam va uzoq xizmat muddatiga mo'ljallangan.</li>
+                <li class="flex gap-4"><span class="text-white font-bold">-</span> Og'ir texnika xizmati - ekskavator, yuk ko'taruvchi texnika, mikser va transport bilan kompleks ta'minot.</li>
+                <li class="flex gap-4"><span class="text-white font-bold">-</span> Yetkazib berish va texnik qo'llab-quvvatlash - joyida maslahat, sifat nazorati va tezkor yetkazib berish.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div id="services-image-grid" class="mx-auto grid max-w-5xl grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 reveal-stagger"></div>
+        </div>
+      </section>
+
+      <!-- Texnika Section -->
+      <section id="transport" class="relative min-h-screen py-32 px-6 slideshow-section" data-group="transport">
+        <div class="slide-container"></div>
+        <div class="relative z-10 max-w-7xl mx-auto">
+          <h2 class="text-5xl font-heading tracking-[10px] text-white/20 uppercase mb-20 text-right reveal">TEXNIKA</h2>
+          
+          <div class="grid grid-cols-1 md:grid-cols-12 gap-12 mb-24 reveal items-center">
+            <div class="md:col-span-6 order-2 md:order-1">
+              <div class="space-y-8 text-gray-400 font-light leading-relaxed text-right md:text-left">
+                <div class="space-y-6">
+                  <p class="text-lg md:text-xl text-gray-300 font-normal leading-relaxed uppercase tracking-wider">
+                    Zamonaviy texnikalar - tez, aniq va samarali qurilish jarayoni Oqqush Beton texnikalari - bu qurilish jarayonining har bir bosqichini tez, sifatli va uzluksiz amalga oshirish imkonini beruvchi kompleks yechimdir.
+                  </p>
+                </div>
+                <div class="space-y-4 pt-8 border-t border-white/10">
+                  <p class="text-sm font-bold uppercase tracking-widest text-white/60">Bizning arsenalimizda:</p>
+                  <ul class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4 text-[11px] uppercase tracking-widest font-medium">
+                    <li class="flex gap-3 items-center">
+                      <div class="size-1.5 rounded-full bg-orange-500"></div>
+                      <span class="text-white">Avtobeton aralashtirgichlar</span>
+                    </li>
+                    <li class="flex gap-3 items-center">
+                      <div class="size-1.5 rounded-full bg-orange-500"></div>
+                      <span class="text-white">Beton nasoslar</span>
+                    </li>
+                    <li class="flex gap-3 items-center">
+                      <div class="size-1.5 rounded-full bg-orange-500"></div>
+                      <span class="text-white">Ekskavatorlar</span>
+                    </li>
+                    <li class="flex gap-3 items-center">
+                      <div class="size-1.5 rounded-full bg-orange-500"></div>
+                      <span class="text-white">Samasvallar</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+            <div class="md:col-span-1 hidden md:flex justify-center order-2">
+              <div class="w-[2px] h-full bg-white/10 rounded-full min-h-[300px]"></div>
+            </div>
+            <div class="md:col-span-5 order-1 md:order-3">
+              <h3 class="text-6xl md:text-8xl font-heading leading-[0.8] uppercase tracking-tighter text-right">
+                MAXSUS<br/>
+                <span class="text-orange-500">TEXNIKALAR</span>
+              </h3>
+            </div>
+          </div>
+
+          <div id="transport-grid" class="grid grid-cols-1 md:grid-cols-3 gap-8 reveal-stagger"></div>
+        </div>
+      </section>
+
+      <!-- Products Section -->
+      <section id="products-section" class="relative min-h-screen py-32 px-6 bg-[#0c0c0c] z-10 slideshow-section" data-group="products">
+        <div class="slide-container"></div>
+        <div class="relative z-10 max-w-7xl mx-auto text-center">
+          <h2 class="text-5xl md:text-6xl font-heading tracking-[10px] text-white/20 uppercase mb-6 reveal drop-shadow-2xl">MAXSULOTLAR</h2>
+          <p class="text-xs md:text-sm text-gray-400 font-medium uppercase tracking-[5px] mb-20 reveal max-w-2xl mx-auto leading-relaxed">
+            Inert materiallar va yuqori sifatli beton mahsulotlari to'plami
+          </p>
+          <div id="products-list-grid" class="grid grid-cols-1 md:grid-cols-3 gap-12 reveal-stagger text-left"></div>
+        </div>
+      </section>
+
+      <!-- Concrete Mix Section -->
+      <section id="concrete-mix" class="relative py-32 px-6 z-10 border-b border-white/5 slideshow-section" data-group="concreteMix">
+        <div class="slide-container"></div>
+        <div class="relative z-10 max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
+          <div class="reveal">
+            <h2 id="product-section-concrete-title" class="text-5xl md:text-7xl font-heading font-black leading-[0.9] mb-12 tracking-tighter">
+              TAYYOR<br/>
+              <span class="text-white/20">BETON</span><br/>
+              ARALASHMA
+            </h2>
+            <div class="space-y-8">
+              <p id="product-section-concrete-desc" class="text-gray-300 font-normal leading-relaxed text-lg max-w-xl">
+                Biz ishlab chiqaradigan beton aralashmalar <span class="text-white font-bold">GOST standartlari</span> asosida tayyorlanadi. Tarkibida inert materiallar yuvilgan pesok, tosh sheben va mavsumiy kimyoviy qo'shimchalar bilan boyitilgan.
+              </p>
+              
+              <div class="space-y-4 pt-8 border-t border-white/10">
+                <h4 class="text-[10px] font-bold uppercase tracking-[5px] text-white/40">Shartli belgilar:</h4>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div class="glass p-4 flex items-baseline gap-3">
+                    <span class="text-xl font-heading font-black text-white/60">M100</span>
+                    <span class="text-[9px] uppercase tracking-widest text-gray-500 line-clamp-1">- MARKA (ROSSIYA)</span>
+                  </div>
+                  <div class="glass p-4 flex items-baseline gap-3">
+                    <span class="text-xl font-heading font-black text-white/60">B5</span>
+                    <span class="text-[9px] uppercase tracking-widest text-gray-500 line-clamp-1">- GOST 7473</span>
+                  </div>
+                  <div class="glass p-4 flex items-baseline gap-3">
+                    <span class="text-xl font-heading font-black text-white/60">C4/5</span>
+                    <span class="text-[9px] uppercase tracking-widest text-gray-500 line-clamp-1">- EN206 (YEVROPA)</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 reveal-stagger">
+            <!-- M100 -->
+            <div class="glass overflow-hidden group hover:bg-white/10 transition-all duration-500 flex flex-col">
+              <div class="h-44 overflow-hidden relative">
+                <img id="panel-m100-image" src="https://images.unsplash.com/photo-1541888941259-79ad73220563?auto=format&fit=crop&q=80&w=800" alt="M100" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                <div class="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] to-transparent opacity-60"></div>
+              </div>
+              <div class="p-6 space-y-4">
+                <h3 id="panel-m100-title" class="text-xl font-heading font-black text-white">M100 | B5 | C4/5</h3>
+                <div class="space-y-1.5">
+                  <p class="text-[9px] text-gray-500 font-bold uppercase tracking-[3px]">Qo'llanishi:</p>
+                  <p id="panel-m100-desc" class="text-[11px] text-gray-300 leading-relaxed uppercase tracking-wider">Tayyorlov ishlari, asos osti qatlamlari</p>
+                </div>
+                <div class="space-y-1.5">
+                  <p class="text-[9px] text-gray-500 font-bold uppercase tracking-[3px]">Afzalligi:</p>
+                  <p id="panel-m100-meta" class="text-[11px] text-gray-400 leading-relaxed uppercase tracking-wider italic">Iqtisodiy va minimal yuklama uchun optimal</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- M150 -->
+            <div class="glass overflow-hidden group hover:bg-white/10 transition-all duration-500 flex flex-col">
+              <div class="h-44 overflow-hidden relative">
+                <img id="panel-m150-image" src="https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&q=80&w=800" alt="M150" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                <div class="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] to-transparent opacity-60"></div>
+              </div>
+              <div class="p-6 space-y-4">
+                <h3 id="panel-m150-title" class="text-xl font-heading font-black text-white">M150 | B10 | C8/10</h3>
+                <div class="space-y-1.5">
+                  <p class="text-[9px] text-gray-500 font-bold uppercase tracking-[3px]">Qo'llanishi:</p>
+                  <p id="panel-m150-desc" class="text-[11px] text-gray-300 leading-relaxed uppercase tracking-wider">Pol quyish, trotuarlar</p>
+                </div>
+                <div class="space-y-1.5">
+                  <p class="text-[9px] text-gray-500 font-bold uppercase tracking-[3px]">Afzalligi:</p>
+                  <p id="panel-m150-meta" class="text-[11px] text-gray-400 leading-relaxed uppercase tracking-wider italic">Mustahkamlik va narx balansida optimal</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- M200 -->
+            <div class="glass overflow-hidden group hover:bg-white/10 transition-all duration-500 flex flex-col">
+              <div class="h-44 overflow-hidden relative">
+                <img id="panel-m200-image" src="https://images.unsplash.com/photo-1590069000107-233ed4969e4b?auto=format&fit=crop&q=80&w=800" alt="M200" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                <div class="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] to-transparent opacity-60"></div>
+              </div>
+              <div class="p-6 space-y-4">
+                <h3 id="panel-m200-title" class="text-xl font-heading font-black text-white">M200 | B15 | C12/15</h3>
+                <div class="space-y-1.5">
+                  <p class="text-[9px] text-gray-500 font-bold uppercase tracking-[3px]">Qo'llanishi:</p>
+                  <p id="panel-m200-desc" class="text-[11px] text-gray-300 leading-relaxed uppercase tracking-wider">Poydevor, devorlar, ustunlar</p>
+                </div>
+                <div class="space-y-1.5">
+                  <p class="text-[9px] text-gray-500 font-bold uppercase tracking-[3px]">Afzalligi:</p>
+                  <p id="panel-m200-meta" class="text-[11px] text-gray-400 leading-relaxed uppercase tracking-wider italic">Yuqori ishonchlilik va universal qo'llanish</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- M250 -->
+            <div class="glass overflow-hidden group hover:bg-white/10 transition-all duration-500 flex flex-col">
+              <div class="h-44 overflow-hidden relative">
+                <img id="panel-m250-image" src="https://images.unsplash.com/photo-1503387762-592dea58ef21?auto=format&fit=crop&q=80&w=800" alt="M250" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                <div class="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] to-transparent opacity-60"></div>
+              </div>
+              <div class="p-6 space-y-4">
+                <h3 id="panel-m250-title" class="text-xl font-heading font-black text-white">M250 | B20 | C16/20</h3>
+                <div class="space-y-1.5">
+                  <p class="text-[9px] text-gray-500 font-bold uppercase tracking-[3px]">Qo'llanishi:</p>
+                  <p id="panel-m250-desc" class="text-[11px] text-gray-300 leading-relaxed uppercase tracking-wider">Ko'p qavatli obyektlar</p>
+                </div>
+                <div class="space-y-1.5">
+                  <p class="text-[9px] text-gray-500 font-bold uppercase tracking-[3px]">Afzalligi:</p>
+                  <p id="panel-m250-meta" class="text-[11px] text-gray-400 leading-relaxed uppercase tracking-wider italic">Mustahkamlik va uzoq xizmat muddati</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- High Performance Concrete Section -->
+      <section id="high-performance-concrete" class="relative py-32 px-6 z-10 border-b border-white/5 slideshow-section" data-group="highPerformance">
+        <div class="slide-container"></div>
+        <div class="relative z-10 max-w-7xl mx-auto">
+          <div class="text-center mb-20 reveal">
+            <h2 id="product-section-high-title" class="text-4xl md:text-5xl font-heading font-black mb-6 tracking-tighter uppercase leading-tight">YUQORI MUSTAHKAMLIKDAGI<br/><span class="text-white/20">MAXSUS BETONLAR</span></h2>
+            <div class="w-20 h-1 bg-white/10 mx-auto"></div>
+          </div>
+          
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-8 reveal-stagger mb-8">
+            <!-- M300 -->
+            <div class="glass overflow-hidden group hover:bg-white/10 transition-all duration-500 border border-white/5">
+              <div class="h-56 overflow-hidden relative">
+                <img id="panel-m300-image" src="https://images.unsplash.com/photo-1518709368324-4d896174775e?auto=format&fit=crop&q=80&w=800" alt="M300" class="w-full h-full object-cover transition-all duration-700 group-hover:scale-110" />
+                <div class="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] to-transparent opacity-60"></div>
+              </div>
+              <div class="p-8">
+                <h3 id="panel-m300-title" class="text-2xl font-heading font-black text-white mb-6">M300 | B22,5 | C18/22</h3>
+                <div class="space-y-4">
+                  <div class="space-y-1">
+                    <p class="text-[9px] font-black text-white/30 uppercase tracking-[3px]">Qo'llanishi:</p>
+                    <p id="panel-m300-desc" class="text-[11px] text-gray-300 uppercase tracking-widest font-medium leading-relaxed">Ko'p qavatli obyektlar, regel va kolonnalar</p>
+                  </div>
+                  <div class="space-y-1">
+                    <p class="text-[9px] font-black text-white/30 uppercase tracking-[3px]">Afzalligi:</p>
+                    <p id="panel-m300-meta" class="text-[11px] text-gray-400 uppercase tracking-widest leading-relaxed italic">Mustahkamlik va uzoq xizmat muddati yemirilishga chidamli</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- M350 -->
+            <div class="glass overflow-hidden group hover:bg-white/10 transition-all duration-500 border border-white/5">
+              <div class="h-56 overflow-hidden relative">
+                <img id="panel-m350-image" src="https://images.unsplash.com/photo-1541888941259-79ad73220563?auto=format&fit=crop&q=80&w=800" alt="M350" class="w-full h-full object-cover transition-all duration-700 group-hover:scale-110" />
+                <div class="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] to-transparent opacity-60"></div>
+              </div>
+              <div class="p-8">
+                <h3 id="panel-m350-title" class="text-2xl font-heading font-black text-white mb-6">M350 | B25 | C20/25</h3>
+                <div class="space-y-4">
+                  <div class="space-y-1">
+                    <p class="text-[9px] font-black text-white/30 uppercase tracking-[3px]">Qo'llanishi:</p>
+                    <p id="panel-m350-desc" class="text-[11px] text-gray-300 uppercase tracking-widest font-medium leading-relaxed">Zavodlar, yo'l qurilishi</p>
+                  </div>
+                  <div class="space-y-1">
+                    <p class="text-[9px] font-black text-white/30 uppercase tracking-[3px]">Afzalligi:</p>
+                    <p id="panel-m350-meta" class="text-[11px] text-gray-400 uppercase tracking-widest leading-relaxed italic">Yuqori zichlik va deformatsiyaga chidamli</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- M400 -->
+            <div class="glass overflow-hidden group hover:bg-white/10 transition-all duration-500 border border-white/5">
+              <div class="h-56 overflow-hidden relative">
+                <img id="panel-m400-image" src="https://images.unsplash.com/photo-1533234407053-ada8c9502b70?auto=format&fit=crop&q=80&w=800" alt="M400" class="w-full h-full object-cover transition-all duration-700 group-hover:scale-110" />
+                <div class="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] to-transparent opacity-60"></div>
+              </div>
+              <div class="p-8">
+                <h3 id="panel-m400-title" class="text-2xl font-heading font-black text-white mb-6">M400 | B30 | C25/30</h3>
+                <div class="space-y-4">
+                  <div class="space-y-1">
+                    <p class="text-[9px] font-black text-white/30 uppercase tracking-[3px]">Qo'llanishi:</p>
+                    <p id="panel-m400-desc" class="text-[11px] text-gray-300 uppercase tracking-widest font-medium leading-relaxed">Ko'priklar</p>
+                  </div>
+                  <div class="space-y-1">
+                    <p class="text-[9px] font-black text-white/30 uppercase tracking-[3px]">Afzalligi:</p>
+                    <p id="panel-m400-meta" class="text-[11px] text-gray-400 uppercase tracking-widest leading-relaxed italic">Ekstremal yuklamalarga bardoshli</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-8 reveal-stagger lg:max-w-4xl mx-auto">
+            <!-- M450 -->
+            <div class="glass overflow-hidden group hover:bg-white/10 transition-all duration-500 border border-white/5">
+              <div class="h-56 overflow-hidden relative">
+                <img id="panel-m450-image" src="https://images.unsplash.com/photo-1513828583688-c52646db42da?auto=format&fit=crop&q=80&w=1200" alt="M450" class="w-full h-full object-cover transition-all duration-700 group-hover:scale-110" />
+                <div class="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] to-transparent opacity-60"></div>
+              </div>
+              <div class="p-8">
+                <h3 id="panel-m450-title" class="text-2xl font-heading font-black text-white mb-6">M450 | B35 | C28/35</h3>
+                <div class="space-y-4">
+                  <div class="space-y-1">
+                    <p class="text-[9px] font-black text-white/30 uppercase tracking-[3px]">Qo'llanishi:</p>
+                    <p id="panel-m450-desc" class="text-[11px] text-gray-300 uppercase tracking-widest font-medium leading-relaxed">Ko'priklar, maxsus obyektlar</p>
+                  </div>
+                  <div class="space-y-1">
+                    <p class="text-[9px] font-black text-white/30 uppercase tracking-[3px]">Afzalligi:</p>
+                    <p id="panel-m450-meta" class="text-[11px] text-gray-400 uppercase tracking-widest leading-relaxed italic">Ekstremal yuklamalarga bardoshli</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- M550 -->
+            <div class="glass overflow-hidden group hover:bg-white/10 transition-all duration-500 border border-white/5">
+              <div class="h-56 overflow-hidden relative">
+                <img id="panel-m550-image" src="https://images.unsplash.com/photo-1574359411659-15573a27f812?auto=format&fit=crop&q=80&w=1200" alt="M550" class="w-full h-full object-cover transition-all duration-700 group-hover:scale-110" />
+                <div class="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] to-transparent opacity-60"></div>
+              </div>
+              <div class="p-8">
+                <h3 id="panel-m550-title" class="text-2xl font-heading font-black text-white mb-6">M550 | B40 | C32/40</h3>
+                <div class="space-y-4">
+                  <div class="space-y-1">
+                    <p class="text-[9px] font-black text-white/30 uppercase tracking-[3px]">Qo'llanishi:</p>
+                    <p id="panel-m550-desc" class="text-[11px] text-gray-300 uppercase tracking-widest font-medium leading-relaxed">Suv omborlar, suv inshootlari</p>
+                  </div>
+                  <div class="space-y-1">
+                    <p class="text-[9px] font-black text-white/30 uppercase tracking-[3px]">Afzalligi:</p>
+                    <p id="panel-m550-meta" class="text-[11px] text-gray-400 uppercase tracking-widest leading-relaxed italic">Yemirilishga chidamli, suv o'tkazmas yuqori bosimga chidamli</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Beton PLITALAR -->
+          <section id="plitalar-section" class="mt-16 reveal relative overflow-hidden slideshow-section min-h-[600px] flex items-center" data-group="plitalar">
+            <div class="slide-container"></div>
+            <div class="glass relative z-20 w-full overflow-hidden flex flex-col lg:flex-row group border border-white/10 backdrop-blur-md">
+              <div class="absolute inset-0 bg-gradient-to-r from-[#0a0a0a] via-[#0a0a0a]/90 to-transparent z-10"></div>
+              <img id="product-section-plitalar-image" src="https://images.unsplash.com/photo-1533234407053-ada8c9502b70?auto=format&fit=crop&q=80&w=1600" alt="Beton Plitalar" class="absolute inset-0 w-full h-full object-cover opacity-30 group-hover:scale-105 transition-transform duration-1000" />
+              
+              <div class="relative z-20 p-10 md:p-16 flex flex-col lg:flex-row gap-12 w-full items-center">
+                <!-- Main Content -->
+                <div class="flex-1 space-y-8">
+                  <h3 id="product-section-plitalar-title" class="text-5xl md:text-7xl font-heading font-black leading-[0.8] tracking-tighter uppercase whitespace-pre-line">
+                    BETON<br/>
+                    <span class="text-orange-500">PLITALAR</span>
+                  </h3>
+                  <div class="w-20 h-1 bg-orange-500/50"></div>
+                  <div id="product-section-plitalar-desc" class="space-y-6 max-w-2xl">
+                    <p class="text-gray-300 font-normal leading-relaxed text-base md:text-lg uppercase tracking-wider">
+                      Oqqush Beton tomonidan ishlab chiqariladigan beton plitalar - yuqori yuklama va uzoq muddatli ekspluatatsiya uchun mo'ljallangan tayyor konstruktiv elementlardir.
+                    </p>
+                    <p class="text-gray-400 font-normal leading-relaxed text-sm md:text-base uppercase tracking-wider opacity-60">
+                      Mahsulotlar zamonaviy texnologiyalar asosida ishlab chiqarilib, har bir partiya mustahkamlik va zichlik ko'rsatkichlari bo'yicha nazoratdan o'tkaziladi.
+                    </p>
+                  </div>
+                </div>
+
+                <!-- Two Small Panels -->
+                <div class="w-full lg:w-[480px] space-y-6">
+                  <!-- 12mm Card -->
+                  <div class="glass overflow-hidden rounded-2xl border border-white/10 hover:bg-white/5 transition-all group/panel flex flex-col sm:flex-row border-l-4 border-l-orange-500/30">
+                    <div class="w-full sm:w-40 h-40 sm:h-auto overflow-hidden shrink-0 bg-white/5">
+                      <img id="panel-plita-12-image" src="https://images.unsplash.com/photo-1590069000107-233ed4969e4b?auto=format&fit=crop&q=80&w=600" class="w-full h-full object-cover opacity-60 group-hover/panel:scale-110 transition-all duration-700" />
+                    </div>
+                    <div class="p-6 flex-1 flex flex-col justify-center">
+                      <h4 id="panel-plita-12-title" class="text-lg font-heading font-black text-white mb-4 uppercase tracking-tighter">12 mm armatura asosida:</h4>
+                      <div class="grid grid-cols-1 gap-3">
+                        <div>
+                          <p class="text-[8px] font-black text-white/30 uppercase tracking-[2px] mb-1">O'lchamlari</p>
+                          <p id="panel-plita-12-desc" class="text-[10px] font-bold text-gray-300 uppercase tracking-widest leading-relaxed">Eni: 1m va 1,2m<br/>Uzunligi: 1,8m-5,9m</p>
+                        </div>
+                        <div>
+                          <p class="text-[8px] font-black text-white/30 uppercase tracking-[2px] mb-1">Yuk ko'tarish qobiliyati</p>
+                          <p id="panel-plita-12-meta" class="text-xs font-black text-orange-500 uppercase tracking-widest">600-900 kg/m²</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- 14mm Card -->
+                  <div class="glass overflow-hidden rounded-2xl border border-white/10 hover:bg-white/5 transition-all group/panel flex flex-col sm:flex-row border-l-4 border-l-orange-500/30">
+                    <div class="w-full sm:w-40 h-40 sm:h-auto overflow-hidden shrink-0 bg-white/5">
+                      <img id="panel-plita-14-image" src="https://images.unsplash.com/photo-1541888941259-79ad73220563?auto=format&fit=crop&q=80&w=600" class="w-full h-full object-cover opacity-60 group-hover/panel:scale-110 transition-all duration-700" />
+                    </div>
+                    <div class="p-6 flex-1 flex flex-col justify-center">
+                      <h4 id="panel-plita-14-title" class="text-lg font-heading font-black text-white mb-4 uppercase tracking-tighter">14 mm armatura asosida:</h4>
+                      <div class="grid grid-cols-1 gap-3">
+                        <div>
+                          <p class="text-[8px] font-black text-white/30 uppercase tracking-[2px] mb-1">O'lchamlari</p>
+                          <p id="panel-plita-14-desc" class="text-[10px] font-bold text-gray-300 uppercase tracking-widest leading-relaxed">Eni: 1m va 1,2m<br/>Uzunligi: 1,8m-5,9m</p>
+                        </div>
+                        <div>
+                          <p class="text-[8px] font-black text-white/30 uppercase tracking-[2px] mb-1">Yuk ko'tarish qobiliyati</p>
+                          <p id="panel-plita-14-meta" class="text-xs font-black text-orange-500 uppercase tracking-widest">900-1300 kg/m²</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- G'ISHT Section -->
+          <section id="gisht-section" class="mt-16 reveal relative overflow-hidden slideshow-section min-h-[600px] flex items-center" data-group="gisht">
+            <div class="slide-container"></div>
+            <div class="glass relative z-20 w-full overflow-hidden flex flex-col lg:flex-row-reverse group border border-white/10 backdrop-blur-md">
+              <div class="absolute inset-0 bg-gradient-to-l from-[#0a0a0a] via-[#0a0a0a]/90 to-transparent z-10"></div>
+              <img id="product-section-gisht-image" src="https://images.unsplash.com/photo-1590069000107-233ed4969e4b?auto=format&fit=crop&q=80&w=1600" alt="G'isht" class="absolute inset-0 w-full h-full object-cover opacity-30 group-hover:scale-105 transition-transform duration-1000" />
+              
+              <div class="relative z-20 p-10 md:p-16 flex flex-col lg:flex-row-reverse gap-12 w-full items-center">
+                <!-- Main Content -->
+                <div class="flex-1 space-y-8 text-right lg:text-right">
+                  <h3 id="product-section-gisht-title" class="text-5xl md:text-7xl font-heading font-black leading-[0.8] tracking-tighter uppercase whitespace-pre-line">
+                    G'ISHT<br/>
+                    <span class="text-orange-500">MAXSULOTI</span>
+                  </h3>
+                  <div class="w-20 h-1 bg-orange-500/50 ml-auto"></div>
+                  <div id="product-section-gisht-desc" class="space-y-6 max-w-2xl ml-auto">
+                    <p class="text-gray-300 font-normal leading-relaxed text-base md:text-lg uppercase tracking-wider">
+                      Binolarni qurishda devor, to'siq va yuk ko'taruvchi konstruksiyalar uchun mo'ljallangan asosiy qurilish materiali. Yuqori mustahkamlik, issiqlikni ushlab turish va uzoq xizmat muddati bilan ajralib turadi.
+                    </p>
+                    <p class="text-white font-black leading-relaxed text-sm md:text-base uppercase tracking-[4px]">
+                      O'lchami: 25x12x6,5 sm
+                    </p>
+                  </div>
+                </div>
+
+                <!-- Two Small Panels -->
+                <div class="w-full lg:w-[480px] space-y-6">
+                  <!-- Panel 1 -->
+                  <div class="glass overflow-hidden rounded-2xl border border-white/10 hover:bg-white/5 transition-all group/panel flex flex-col sm:flex-row border-r-4 border-r-orange-500/30 text-left">
+                    <div class="w-full sm:w-40 h-40 sm:h-auto overflow-hidden shrink-0 bg-white/5">
+                      <img id="panel-hom-gisht-image" src="https://images.unsplash.com/photo-1590069000107-233ed4969e4b?auto=format&fit=crop&q=80&w=600" class="w-full h-full object-cover opacity-60 group-hover/panel:scale-110 transition-all duration-700" />
+                    </div>
+                    <div class="p-6 flex-1 flex flex-col justify-center">
+                      <h4 id="panel-hom-gisht-title" class="text-lg font-heading font-black text-white mb-2 uppercase tracking-tighter">Hom g'isht</h4>
+                      <p id="panel-hom-gisht-desc" class="text-[10px] text-gray-400 uppercase tracking-widest leading-relaxed mb-4">Arzon va iqtisodiy. Tabiiy mikroklim yaratadi.</p>
+                      <div class="flex items-center gap-2">
+                        <span class="size-2 rounded-full bg-orange-500"></span>
+                        <p id="panel-hom-gisht-meta" class="text-[10px] font-black text-white uppercase tracking-[2px]">Mavjud</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Panel 2 -->
+                  <div class="glass overflow-hidden rounded-2xl border border-white/10 hover:bg-white/5 transition-all group/panel flex flex-col sm:flex-row border-r-4 border-r-orange-500/30 text-left">
+                    <div class="w-full sm:w-40 h-40 sm:h-auto overflow-hidden shrink-0 bg-white/5">
+                      <img id="panel-pishiq-gisht-image" src="https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&q=80&w=600" class="w-full h-full object-cover opacity-60 group-hover/panel:scale-110 transition-all duration-700" />
+                    </div>
+                    <div class="p-6 flex-1 flex flex-col justify-center">
+                      <h4 id="panel-pishiq-gisht-title" class="text-lg font-heading font-black text-white mb-2 uppercase tracking-tighter">Pishiq g'isht</h4>
+                      <p id="panel-pishiq-gisht-desc" class="text-[10px] text-gray-400 uppercase tracking-widest leading-relaxed mb-4">Maxsus pechlarda yuqori haroratda pishirilgan. Ekologik xavfsiz material. Mustahkam va bardoshli.</p>
+                      <div class="flex items-center gap-2">
+                        <span class="size-2 rounded-full bg-orange-500"></span>
+                        <p id="panel-pishiq-gisht-meta" class="text-[10px] font-black text-white uppercase tracking-[2px]">Mavjud</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <!-- Laboratory Section -->
+      <section id="laboratory" class="relative min-h-screen py-32 px-6 slideshow-section" data-group="laboratory">
+        <div class="slide-container"></div>
+        <div class="relative z-10 max-w-7xl mx-auto text-center">
+          <div class="mb-20 reveal">
+            <h2 class="text-6xl md:text-8xl font-heading font-black tracking-tighter uppercase mb-8 flex flex-col items-center">
+              <span class="text-white">LABORATORIYA</span>
+              <div class="w-full max-w-lg h-[2px] bg-white opacity-20 mt-4 relative">
+                <div class="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 size-3 bg-white rounded-full"></div>
+              </div>
+            </h2>
+            <p class="max-w-3xl mx-auto text-gray-400 font-light leading-relaxed text-sm md:text-base uppercase tracking-[4px]">
+              Laboratoriyamizda zamonaviy texnologiyalar va dunyo standartlariga mos tartibda tajriba va sinov ishlari olib boriladi. Sifat doimiy ravishda qat'iy nazorati qilib boriladi.
+            </p>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 reveal-stagger">
+            <!-- Test 1 -->
+            <div class="glass group/item overflow-hidden relative min-h-[350px] border border-white/5 flex flex-col justify-end p-8 hover:bg-white/5 transition-all">
+              <img src="https://images.unsplash.com/photo-1581093458791-9f3c3900df4b?auto=format&fit=crop&q=80&w=600" class="absolute inset-0 w-full h-full object-cover opacity-55 group-hover/item:scale-110 transition-all duration-700" />
+              <div class="absolute inset-0 bg-gradient-to-t from-black via-black/80 to-transparent"></div>
+              <div class="relative z-10 space-y-4 text-left">
+                <div class="size-8 rounded-full bg-orange-500/20 border border-orange-500/50 flex items-center justify-center">
+                  <span class="text-orange-500 text-[10px] font-black">01</span>
+                </div>
+                <h4 class="text-xl font-heading font-black text-white uppercase tracking-tighter">Normal qotish kamerasi</h4>
+                <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest leading-relaxed">Olingan namunalarni 20°C (±5°) haroratda 95% namlikda 28 sutka davomida saqlanadi.</p>
+              </div>
+            </div>
+
+            <!-- Test 2 -->
+            <div class="glass group/item overflow-hidden relative min-h-[350px] border border-white/5 flex flex-col justify-end p-8 hover:bg-white/5 transition-all">
+              <img src="https://images.unsplash.com/photo-1590069000107-233ed4969e4b?auto=format&fit=crop&q=80&w=600" class="absolute inset-0 w-full h-full object-cover opacity-55 group-hover/item:scale-110 transition-all duration-700" />
+              <div class="absolute inset-0 bg-gradient-to-t from-black via-black/80 to-transparent"></div>
+              <div class="relative z-10 space-y-4 text-left">
+                <div class="size-8 rounded-full bg-orange-500/20 border border-orange-500/50 flex items-center justify-center">
+                  <span class="text-orange-500 text-[10px] font-black">02</span>
+                </div>
+                <h4 class="text-xl font-heading font-black text-white uppercase tracking-tighter">Laboratoriya elagi (Sita)</h4>
+                <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest leading-relaxed">Beton zavodga keladigan inert mahsulotni fraksiyalarga ajratib doimiy ravishda sifat nazorati olib boriladi.</p>
+              </div>
+            </div>
+
+            <!-- Test 3 -->
+            <div class="glass group/item overflow-hidden relative min-h-[350px] border border-white/5 flex flex-col justify-end p-8 hover:bg-white/5 transition-all">
+              <img src="https://images.unsplash.com/photo-1574680077531-15ee809bc662?auto=format&fit=crop&q=80&w=600" class="absolute inset-0 w-full h-full object-cover opacity-55 group-hover/item:scale-110 transition-all duration-700" />
+              <div class="absolute inset-0 bg-gradient-to-t from-black via-black/80 to-transparent"></div>
+              <div class="relative z-10 space-y-4 text-left">
+                <div class="size-8 rounded-full bg-orange-500/20 border border-orange-500/50 flex items-center justify-center">
+                  <span class="text-orange-500 text-[10px] font-black">03</span>
+                </div>
+                <h4 class="text-xl font-heading font-black text-white uppercase tracking-tighter">Gidravlik press</h4>
+                <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest leading-relaxed">Olingan namunalarni GOST 10180 - 2012 bo'yicha 3; 7 va 28 sutkalik parvarishdan so'ng pres orqali sinovdan o'tkaziladi.</p>
+              </div>
+            </div>
+
+            <!-- Test 4 -->
+            <div class="glass group/item overflow-hidden relative min-h-[350px] border border-white/5 flex flex-col justify-end p-8 hover:bg-white/5 transition-all">
+              <img src="https://images.unsplash.com/photo-1581094288338-2314dddb7903?auto=format&fit=crop&q=80&w=600" class="absolute inset-0 w-full h-full object-cover opacity-55 group-hover/item:scale-110 transition-all duration-700" />
+              <div class="absolute inset-0 bg-gradient-to-t from-black via-black/80 to-transparent"></div>
+              <div class="relative z-10 space-y-4 text-left">
+                <div class="size-8 rounded-full bg-orange-500/20 border border-orange-500/50 flex items-center justify-center">
+                  <span class="text-orange-500 text-[10px] font-black">04</span>
+                </div>
+                <h4 class="text-xl font-heading font-black text-white uppercase tracking-tighter">Abrams konusi</h4>
+                <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest leading-relaxed">Tayyorlangan betondan namuna olib GOST 7473 bo'yicha uning oquvchanlik holati aniqlanadi (P1, P2, P3, P4 va P5).</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Projects Section -->
+      <section id="projects" class="relative min-h-screen py-32 px-6 slideshow-section" data-group="projects">
+        <div class="slide-container"></div>
+        <div class="relative z-10 max-w-7xl mx-auto">
+          <h2 class="text-5xl font-heading tracking-[10px] text-white/20 uppercase mb-20 reveal">BAJARILGAN ISHLAR</h2>
+          <div id="projects-grid" class="grid grid-cols-1 md:grid-cols-3 gap-8 reveal-stagger"></div>
+        </div>
+      </section>
+
+      <!-- Public Panel Viewer -->
+      <div id="panel-viewer-modal" class="fixed inset-0 z-[100000] hidden items-center justify-center p-4 md:p-8">
+        <button id="panel-viewer-backdrop" class="absolute inset-0 bg-black/85 backdrop-blur-xl opacity-0 transition-opacity duration-300" aria-label="Panelni yopish"></button>
+        <div id="panel-viewer-card" class="relative z-10 w-full max-w-5xl overflow-hidden rounded-2xl border border-white/15 bg-[#080808] shadow-2xl opacity-0 scale-95 translate-y-6 transition-all duration-300">
+          <button id="panel-viewer-close" class="absolute right-4 top-4 z-30 size-11 rounded-xl border border-white/10 bg-black/55 text-white/70 backdrop-blur hover:bg-white hover:text-black transition-all" aria-label="Yopish">
+            <svg class="m-auto" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4">
+              <path d="M18 6L6 18M6 6l12 12"/>
+            </svg>
+          </button>
+
+          <button id="panel-viewer-prev" class="absolute left-3 md:left-5 top-1/2 z-30 size-11 -translate-y-1/2 rounded-xl border border-white/10 bg-black/55 text-white/80 backdrop-blur hover:bg-white hover:text-black transition-all" aria-label="Oldingi panel">
+            <svg class="m-auto" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4">
+              <path d="M15 18l-6-6 6-6"/>
+            </svg>
+          </button>
+          <button id="panel-viewer-next" class="absolute right-3 md:right-5 top-1/2 z-30 size-11 -translate-y-1/2 rounded-xl border border-white/10 bg-black/55 text-white/80 backdrop-blur hover:bg-white hover:text-black transition-all" aria-label="Keyingi panel">
+            <svg class="m-auto" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4">
+              <path d="M9 18l6-6-6-6"/>
+            </svg>
+          </button>
+
+          <div class="grid max-h-[86vh] grid-cols-1 lg:grid-cols-[1.15fr_0.85fr] overflow-y-auto scroll-contained">
+            <div id="panel-viewer-media" class="relative min-h-[320px] bg-white/5"></div>
+            <div class="flex min-h-[360px] flex-col justify-center p-8 md:p-12 lg:p-14">
+              <div id="panel-viewer-count" class="mb-5 text-[10px] font-black uppercase tracking-[4px] text-orange-400"></div>
+              <h3 id="panel-viewer-title" class="font-heading text-3xl md:text-5xl font-black uppercase leading-tight tracking-tighter text-white"></h3>
+              <div class="my-7 h-px w-20 bg-white/20"></div>
+              <div id="panel-viewer-desc" class="space-y-4 text-sm font-medium uppercase leading-relaxed tracking-[2px] text-gray-300"></div>
+              <div id="panel-viewer-meta" class="mt-8 hidden rounded-xl border border-orange-400/25 bg-orange-400/10 px-5 py-4 text-[11px] font-black uppercase tracking-[3px] text-orange-200"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Generic Content Edit Modal -->
+      <div id="content-modal" class="fixed inset-0 bg-black/95 z-[100000] hidden items-center justify-center p-6 backdrop-blur-xl opacity-0 transition-opacity duration-300">
+        <div class="glass max-w-lg w-full p-10 space-y-6 relative overflow-y-auto max-h-[90vh] scroll-contained opacity-0 scale-95 translate-y-6 transition-all duration-300">
+          <button id="close-content-modal" class="absolute top-6 right-6 text-white/40 hover:text-white">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 6L6 18M6 6l12 12"/>
+            </svg>
+          </button>
+          <h3 id="content-modal-title" class="text-2xl font-heading font-black uppercase tracking-widest">Bo'lim Ma'lumoti</h3>
+          <div class="space-y-4">
+            <div class="space-y-2">
+              <label class="text-[10px] font-bold uppercase tracking-[3px] text-gray-500">Nomi</label>
+              <input type="text" id="content-name" class="admin-input" placeholder="Nomi">
+            </div>
+            <div class="space-y-2">
+              <label class="text-[10px] font-bold uppercase tracking-[3px] text-gray-500">Rasm yuklash</label>
+              <div class="flex gap-4 items-center">
+                <div id="content-img-preview" class="size-16 rounded-xl bg-white/5 border border-white/10 bg-cover bg-center"></div>
+                <input type="file" id="content-file-input" class="hidden" accept="image/*">
+                <button onclick="document.getElementById('content-file-input').click()" class="btn-outline !py-2 !px-4 !text-[8px] flex-1">Rasm tanlash</button>
+              </div>
+            </div>
+            <div class="space-y-2">
+              <label class="text-[10px] font-bold uppercase tracking-[3px] text-gray-500">Ma'lumot</label>
+              <textarea id="content-desc" class="admin-input min-h-[120px]" placeholder="Ma'lumot"></textarea>
+            </div>
+            <div id="content-meta-wrap" class="space-y-2 hidden">
+              <label class="text-[10px] font-bold uppercase tracking-[3px] text-gray-500">Qo'shimcha yozuv</label>
+              <input type="text" id="content-meta" class="admin-input" placeholder="Masalan: Mavjud yoki 600-900 kg/m2">
+            </div>
+            <button id="save-content-btn" class="btn-primary w-full mt-4">SAQLASH</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Add Transport Modal -->
+      <div id="transport-modal" class="fixed inset-0 bg-black/95 z-[100000] hidden items-center justify-center p-6 backdrop-blur-xl opacity-0 transition-opacity duration-300">
+        <div class="glass max-w-lg w-full p-10 space-y-6 relative overflow-y-auto max-h-[90vh] scroll-contained opacity-0 scale-95 translate-y-6 transition-all duration-300">
+          <button id="close-transport-modal" class="absolute top-6 right-6 text-white/40 hover:text-white">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 6L6 18M6 6l12 12"/>
+            </svg>
+          </button>
+          <h3 class="text-2xl font-heading font-black uppercase tracking-widest">Texnika Ma'lumoti</h3>
+          <div class="space-y-4">
+            <div class="space-y-2">
+              <label class="text-[10px] font-bold uppercase tracking-[3px] text-gray-500">Nomi</label>
+              <input type="text" id="t-name" class="admin-input" placeholder="Beton Nasos">
+            </div>
+            <div class="space-y-2">
+              <label class="text-[10px] font-bold uppercase tracking-[3px] text-gray-500">Rasm yuklash</label>
+              <div class="flex gap-4 items-center">
+                <div id="t-img-preview" class="size-16 rounded-xl bg-white/5 border border-white/10 bg-cover bg-center"></div>
+                <input type="file" id="t-file-input" class="hidden" accept="image/*">
+                <button onclick="document.getElementById('t-file-input').click()" class="btn-outline !py-2 !px-4 !text-[8px] flex-1">Rasm tanlash</button>
+              </div>
+            </div>
+            <div class="space-y-2">
+              <label class="text-[10px] font-bold uppercase tracking-[3px] text-gray-500">Xususiyatlari (Har birini yangi qatordan yozing)</label>
+              <textarea id="t-specs" class="admin-input min-h-[120px]" placeholder="Uzatib berish: 40-56 m\nIsh unumdorligi: 70 - 100 m3/soat"></textarea>
+            </div>
+            <button id="save-transport-btn" class="btn-primary w-full mt-4">SAQLASH</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <footer id="footer" class="bg-[#090909] py-32 px-6 border-t border-white/5 relative z-10 overflow-hidden slideshow-section" data-group="contact">
+        <div class="slide-container"></div>
+        <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-24 relative z-10">
+           <div class="space-y-10">
+            <div class="flex items-center gap-4 group">
+              <div class="relative">
+                <img src="/images/logo.png" alt="Oqqush Logo" class="h-10 w-auto object-contain brightness-125 contrast-125 mix-blend-screen" />
+                <div class="absolute inset-0 bg-white/5 rounded-full blur-lg opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              </div>
+              <div class="flex flex-col font-heading leading-[0.8] tracking-[3px] text-white">
+                <span id="f-logo-1" class="text-[22px] font-black uppercase">OQQUSH</span>
+                <span id="f-logo-2" class="text-[22px] font-black uppercase text-white/40">BETON</span>
+              </div>
+            </div>
+            <p class="text-gray-500 font-light leading-relaxed max-w-md">
+              O'zbekistondagi zamonaviy beton markazi. Biz bilan sizning binoingiz asrlarga tatiydigan mustahkamlikka ega bo'ladi.
+            </p>
+            <div class="text-[10px] text-gray-700 font-bold uppercase tracking-[4px]">
+              &copy; 2025 OQQUSH BETON. BARCHA HUQUQLAR HIMOYALANGAN.
+            </div>
+          </div>
+          <div>
+            <h5 class="text-[10px] font-black uppercase tracking-[6px] mb-12 text-white">Sahifalar</h5>
+            <div class="flex flex-col gap-6 text-[11px] uppercase tracking-[4px] font-black text-white/60">
+              <a href="#home" class="hover:text-white transition-all">Bosh sahifa</a>
+              <a href="#about" class="hover:text-white transition-all">Biz haqimizda</a>
+              <a href="#services" class="hover:text-white transition-all">Xizmatlar</a>
+              <a href="#transport" class="hover:text-white transition-all">Texnika</a>
+              <a href="#products-section" class="hover:text-white transition-all">Mahsulotlar</a>
+              <a href="#laboratory" class="hover:text-white transition-all">Laboratoriya</a>
+              <a href="#projects" class="hover:text-white transition-all">Bajarilgan ishlar</a>
+            </div>
+          </div>
+          <div id="social-footer">
+            <h5 class="text-xs font-bold uppercase tracking-[6px] mb-12 text-white/40">Ijtimoiy tarmoqlar</h5>
+            <div id="social-list-footer" class="space-y-6"></div>
+          </div>
+        </div>
+      </footer>
+
+      <!-- Admin Password Modal -->
+      <div id="admin-modal" class="fixed inset-0 z-[10000] flex items-center justify-center p-6 hidden opacity-0 transition-opacity duration-300">
+        <div id="modal-backdrop" class="absolute inset-0 bg-black/80 backdrop-blur-md"></div>
+        <div class="relative glass max-w-md w-full p-10 space-y-8">
+          <h3 class="text-3xl font-heading tracking-widest uppercase text-center">Admin Kirish</h3>
+          <input type="password" id="admin-password-input" class="admin-input text-center tracking-widest" placeholder="........" autocomplete="new-password" spellcheck="false">
+          <button id="admin-login-btn" class="btn-primary w-full">KIRISH</button>
+        </div>
+      </div>
+
+      <!-- Admin Sidebar -->
+      <aside id="admin-sidebar" class="fixed top-0 right-0 h-screen w-full md:max-w-[440px] z-[10002] bg-[#080808]/98 backdrop-blur-[30px] border-l border-white/10 translate-x-full transition-transform duration-[400ms] cubic-bezier(0.4,0,0.2,1) flex flex-col scroll-contained">
+         <div class="p-8 border-b border-white/5 flex justify-between items-center">
+          <div class="flex items-center gap-4 group">
+            <div class="relative">
+              <img src="/images/logo.png" alt="Admin Logo" class="h-8 w-auto object-contain brightness-125 contrast-125 mix-blend-screen" />
+            </div>
+            <h2 class="text-2xl font-heading tracking-widest uppercase pt-1">Admin Panel</h2>
+          </div>
+          <button id="admin-close" class="text-gray-500 hover:text-white transition-colors">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+        
+        <div class="px-6 py-4 border-b border-white/5 bg-black/40">
+          <div class="flex gap-4 overflow-x-auto whitespace-nowrap scrollbar-hide py-2">
+            <button class="admin-nav-btn active" data-tab="social">
+              <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+              <span>Aloqa</span>
+            </button>
+            <button class="admin-nav-btn" data-tab="hero">
+              <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+              <span>Bosh sahifa</span>
+            </button>
+            <button class="admin-nav-btn" data-tab="products">
+              <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><line x1="3" x2="21" y1="6" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+              <span>Mahsulotlar</span>
+            </button>
+            <button class="admin-nav-btn" data-tab="projects">
+              <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/><line x1="10" x2="8" y1="9" y2="9"/></svg>
+              <span>Bajarilgan ishlar</span>
+            </button>
+            <button class="admin-nav-btn" data-tab="transport">
+              <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-1a2 2 0 0 0-2-2h-3"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/></svg>
+              <span>Texnika</span>
+            </button>
+            <button class="admin-nav-btn" data-tab="services">
+              <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.8-3.8a6 6 0 0 1-7.9 7.9l-6.1 6.1a2.1 2.1 0 0 1-3-3l6.1-6.1a6 6 0 0 1 7.9-7.9l-3.8 3.8z"/></svg>
+              <span>Xizmatlar</span>
+            </button>
+            <button class="admin-nav-btn" data-tab="laboratory">
+              <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10 2v7.31"/><path d="M14 9.3V2"/><path d="M8.5 2h7"/><path d="M14 9.3a6.5 6.5 0 1 1-4 0"/><path d="M5.58 16h12.85"/></svg>
+              <span>Laboratoriya</span>
+            </button>
+            <button class="admin-nav-btn" data-tab="slideshows">
+              <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+              <span>Fon rasmlari</span>
+            </button>
+            <button class="admin-nav-btn" data-tab="settings">
+              <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+              <span>Sozlamalar</span>
+            </button>
+          </div>
+        </div>
+
+        <div id="admin-tabs-content" class="flex-1 overflow-y-auto p-8 admin-scroll">
+          <!-- Social Tab -->
+          <div id="tab-social" class="space-y-2">
+            <div class="space-y-4">
+              <label class="text-[10px] font-bold uppercase tracking-[3px] text-gray-500">Telegram</label>
+              <input type="text" id="s-tg" class="admin-input" placeholder="@handle">
+              <label class="text-[10px] font-bold uppercase tracking-[3px] text-gray-500">Instagram</label>
+              <input type="text" id="s-ig" class="admin-input" placeholder="@username">
+              <label class="text-[10px] font-bold uppercase tracking-[3px] text-gray-500">YouTube</label>
+              <input type="text" id="s-yt" class="admin-input" placeholder="channel-link">
+              <label class="text-[10px] font-bold uppercase tracking-[3px] text-gray-500">Facebook</label>
+              <input type="text" id="s-fb" class="admin-input" placeholder="profile-link">
+              <label class="text-[10px] font-bold uppercase tracking-[3px] text-gray-500">Telefon raqamlar</label>
+              <textarea id="s-ph" class="admin-input min-h-[80px]" placeholder="+998 00 000 00 00 (har birini yangi qatordan yozing)"></textarea>
+            </div>
+            <button id="save-social-btn" class="btn-primary w-full mt-6">Saqlash</button>
+          </div>
+
+          <!-- Products Tab -->
+          <div id="tab-products" class="hidden space-y-6">
+            <button id="add-prod-btn" class="btn-outline w-full text-[10px]">+ YANGI MAHSULOT</button>
+            <div id="prod-form" class="hidden glass p-6 space-y-4 border-white/20">
+              <div class="space-y-2">
+                <label class="text-[10px] font-bold uppercase tracking-[3px] text-gray-500">Rasm yuklash</label>
+                <div class="flex gap-4 items-center">
+                  <div id="prod-img-preview" class="size-16 rounded-xl bg-white/5 border border-white/10 bg-cover bg-center"></div>
+                  <input type="file" id="prod-file-input" class="hidden" accept="image/*">
+                  <button onclick="document.getElementById('prod-file-input').click()" class="btn-outline !py-2 !px-4 !text-[8px] flex-1">Fayl tanlash</button>
+                </div>
+              </div>
+              <input type="text" id="prod-name" class="admin-input" placeholder="Mahsulot nomi">
+              <textarea id="prod-desc" class="admin-input min-h-[100px]" placeholder="Ma'lumotlar (har bir qatorni yangi qatordan yozing)"></textarea>
+              <div class="flex gap-4">
+                <button id="prod-save" class="btn-primary flex-1">SAQLASH</button>
+                <button id="prod-cancel" class="btn-outline flex-1">BEKOR</button>
+              </div>
+            </div>
+            <div id="admin-products-list" class="space-y-4"></div>
+            <div class="glass p-6 border-white/10 space-y-4">
+              <div>
+                <h4 class="text-lg font-heading font-black uppercase text-white">Mahsulot bo'limlari</h4>
+                <p class="mt-2 text-[10px] text-white/35 uppercase tracking-[2px] leading-relaxed">Beton aralashma, maxsus betonlar, beton plitalar, g'isht va boshqa mahsulot ichki bo'limlarini tahrirlash.</p>
+              </div>
+              <div id="admin-product-sections-list" class="space-y-4"></div>
+            </div>
+          </div>
+
+          <!-- Projects Tab -->
+          <div id="tab-projects" class="hidden space-y-6">
+            <button id="add-project-btn" class="btn-outline w-full text-[10px]">+ YANGI BAJARILGAN ISH</button>
+            <div id="p-form" class="hidden glass p-6 space-y-4 border-white/20 opacity-0 scale-95 -translate-y-3 transition-all duration-300 ease-out">
+              <div class="space-y-2">
+                <label class="text-[10px] font-bold uppercase tracking-[3px] text-gray-500">Rasm yoki video yuklash</label>
+                <div class="flex gap-4 items-center">
+                  <div id="p-img-preview" class="size-16 overflow-hidden rounded-xl bg-white/5 border border-white/10 bg-cover bg-center"></div>
+                  <input type="file" id="p-file-input" class="hidden" accept="image/*,video/*">
+                  <button onclick="document.getElementById('p-file-input').click()" class="btn-outline !py-2 !px-4 !text-[8px] flex-1">Fayl tanlash</button>
+                </div>
+                <p class="text-[9px] text-white/30 uppercase tracking-[2px]">Video yuklash uchun 100MB dan oshmasin.</p>
+              </div>
+              <input type="text" id="p-name" class="admin-input" placeholder="Bajarilgan ish nomi">
+              <input type="text" id="p-loc" class="admin-input" placeholder="Joylashuv">
+              <input type="text" id="p-year" class="admin-input" placeholder="Yil">
+              <div class="flex gap-4">
+                <button id="p-save" class="btn-primary flex-1">SAQLASH</button>
+                <button id="p-cancel" class="btn-outline flex-1">BEKOR</button>
+              </div>
+            </div>
+            <div id="admin-projects-list" class="space-y-4"></div>
+          </div>
+
+          <!-- Services Tab -->
+          <div id="tab-services" class="hidden space-y-6">
+            <div class="glass p-8 border-t-4 border-t-indigo-500">
+              <div class="flex justify-between items-center mb-8">
+                <h4 class="text-xl font-heading font-black uppercase">Xizmatlar</h4>
+                <button id="add-service-btn" class="px-4 py-2 bg-indigo-500 text-black text-[10px] font-bold uppercase tracking-widest rounded-lg">Yangi qo'shish</button>
+              </div>
+              <div id="admin-services-list" class="space-y-4">
+                <!-- Admin services items -->
+              </div>
+            </div>
+          </div>
+
+          <div id="tab-transport" class="space-y-6 hidden">
+            <div class="glass p-8 border-t-4 border-t-orange-500">
+              <div class="flex justify-between items-center mb-8">
+                <h4 class="text-xl font-heading font-black uppercase">Texnika</h4>
+                <button id="add-transport-btn" class="px-4 py-2 bg-orange-500 text-black text-[10px] font-bold uppercase tracking-widest rounded-lg">Yangi qo'shish</button>
+              </div>
+              <div id="admin-transport-list" class="space-y-4">
+                <!-- Admin transport items -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Laboratory Tab -->
+          <div id="tab-laboratory" class="hidden space-y-6">
+            <div class="glass p-8 border-t-4 border-t-orange-500">
+              <div class="flex justify-between items-center mb-8">
+                <h4 class="text-xl font-heading font-black uppercase">Laboratoriya</h4>
+                <button id="add-lab-btn" class="px-4 py-2 bg-orange-500 text-black text-[10px] font-bold uppercase tracking-widest rounded-lg">Yangi qo'shish</button>
+              </div>
+              <div id="admin-lab-list" class="space-y-4">
+                <!-- Admin lab items -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Slideshows Tab -->
+          <div id="tab-slideshows" class="hidden space-y-6">
+            <div class="glass p-8 border-t-4 border-t-blue-500">
+               <h4 class="text-xl font-heading font-black uppercase mb-6 text-white">Fon rasmlari</h4>
+               <p class="text-[10px] text-gray-500 uppercase tracking-widest leading-relaxed mb-8">Bo'limlar uchun orqa fon rasmlari. Faqat rasm fayl yuklanadi, URL qabul qilinmaydi.</p>
+               
+               <div id="slideshow-edit-list" class="space-y-8">
+                 <!-- Dynamic list of slide categories -->
+               </div>
+               
+               <button id="save-slideshows-btn" class="btn-primary w-full mt-10">BARCHASINI SAQLASH</button>
+            </div>
+          </div>
+          <!-- Hero Tab -->
+          <div id="tab-hero" class="hidden space-y-6">
+            <div class="glass p-8 border-t-4 border-t-blue-500 space-y-6">
+              <h4 class="text-xl font-heading font-black uppercase text-white mb-2">Bosh sahifa</h4>
+              <div class="space-y-4">
+                <div class="space-y-2">
+                  <label class="text-[10px] text-gray-500 uppercase tracking-widest">Sarlavha</label>
+                  <input type="text" id="set-h1" class="admin-input" placeholder="Bosh sahifa sarlavhasi">
+                </div>
+                <div class="space-y-2">
+                  <label class="text-[10px] text-gray-500 uppercase tracking-widest">Tavsif</label>
+                  <textarea id="set-sub" class="admin-input min-h-[100px]" placeholder="Bosh sahifa tavsifi"></textarea>
+                </div>
+              </div>
+              <h4 class="text-xl font-heading font-black uppercase text-white mt-8 mb-2">Statistikalar</h4>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="space-y-2">
+                  <label class="text-[10px] text-gray-500 uppercase tracking-widest">Ishlar</label>
+                  <input type="text" id="set-s1" class="admin-input" placeholder="Stat 1">
+                </div>
+                <div class="space-y-2">
+                  <label class="text-[10px] text-gray-500 uppercase tracking-widest">Tajriba</label>
+                  <input type="text" id="set-s2" class="admin-input" placeholder="Stat 2">
+                </div>
+                <div class="space-y-2">
+                  <label class="text-[10px] text-gray-500 uppercase tracking-widest">Mijozlar</label>
+                  <input type="text" id="set-s3" class="admin-input" placeholder="Stat 3">
+                </div>
+              </div>
+              <button id="save-hero-btn" class="btn-primary w-full mt-6">BANNERNI SAQLASH</button>
+            </div>
+          </div>
+
+          <!-- Settings Tab -->
+          <div id="tab-settings" class="hidden space-y-8">
+            <div class="glass p-8 border-t-4 border-t-gray-500 space-y-6">
+              <h4 class="text-xl font-heading font-black uppercase text-white mb-2">Tizim Sozlamalari</h4>
+              <div class="space-y-4">
+                <div class="space-y-2">
+                  <label class="text-[10px] text-gray-500 uppercase tracking-widest">Kompaniya nomi</label>
+                  <input type="text" id="set-name" class="admin-input" placeholder="Kompaniya nomi">
+                </div>
+              </div>
+              
+              <div class="space-y-4 pt-8 border-t border-white/5">
+                <h4 class="text-[10px] font-bold uppercase tracking-[4px] text-white">Xavfsizlik</h4>
+                <div class="space-y-3">
+                  <input type="password" id="old-pass" class="admin-input" placeholder="Eski parol">
+                  <input type="password" id="new-pass" class="admin-input" placeholder="Yangi parol">
+                  <input type="password" id="conf-pass" class="admin-input" placeholder="Tasdiqlash">
+                </div>
+              </div>
+              <button id="save-settings-btn" class="btn-primary w-full">SOZLAMALARNI SAQLASH</button>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <div id="admin-overlay" class="fixed inset-0 z-[10001] bg-black/60 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300"></div>
+      <div id="toast-container" class="fixed bottom-10 right-10 z-[100000] pointer-events-none"></div>
+    </div>
+    <!-- AI Assistant UI -->
+    <div id="ai-container" class="fixed bottom-6 right-6 z-[1000] flex max-w-[calc(100vw-48px)] flex-col items-end gap-5">
+      <div id="ai-chat-panel" class="glass hidden w-[min(360px,calc(100vw-32px))] rounded-2xl border border-white/15 bg-black/80 backdrop-blur-3xl shadow-[0_32px_90px_rgba(0,0,0,0.65)] overflow-hidden scroll-contained">
+        <div class="flex items-center justify-between border-b border-white/10 px-5 py-4">
+          <div>
+            <h4 class="text-sm font-black uppercase tracking-[3px] text-white">AI Chat</h4>
+            <p class="text-[10px] font-bold uppercase tracking-[2px] text-cyan-300/80">Oqqush Beton yordamchisi</p>
+          </div>
+          <button id="ai-chat-close" class="size-9 rounded-lg border border-white/10 text-white/60 hover:text-white hover:bg-white/10 transition-all" aria-label="Chatni yopish">
+            <svg class="m-auto size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+            </svg>
+          </button>
+        </div>
+        <div id="ai-chat-messages" class="max-h-[360px] min-h-[260px] space-y-3 overflow-y-auto p-5 admin-scroll">
+          <div class="max-w-[85%] rounded-2xl rounded-tl-sm bg-white/10 px-4 py-3 text-sm text-white/85">
+            Assalomu alaykum! Savolingizni yozing, men yordam beraman.
+          </div>
+        </div>
+        <form id="ai-chat-form" class="flex gap-2 border-t border-white/10 p-4">
+          <input id="ai-chat-input" class="min-w-0 flex-1 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none placeholder-white/30 focus:border-cyan-300/50" placeholder="Savol yozing..." autocomplete="off">
+          <button class="size-12 shrink-0 rounded-xl bg-cyan-300 text-black transition-all hover:bg-cyan-200" aria-label="Yuborish">
+            <svg class="m-auto size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/>
+            </svg>
+          </button>
+        </form>
+      </div>
+      <!-- Chat Bubble -->
+      <div id="ai-status-box" class="glass hidden w-[min(360px,calc(100vw-48px))] p-5 rounded-2xl border border-cyan-300/25 backdrop-blur-3xl transition-all duration-700 scale-90 opacity-0 mb-2 translate-y-8 shadow-[0_32px_90px_rgba(0,0,0,0.65)] group scroll-contained">
+        <div class="flex w-full flex-col items-center gap-5">
+          <div class="relative w-28 h-24 flex items-center justify-center">
+            <div class="absolute -top-2 left-1/2 h-5 w-px bg-cyan-300/70"></div>
+            <div class="absolute -top-5 left-1/2 size-3 rounded-full bg-cyan-300 shadow-[0_0_18px_rgba(103,232,249,0.9)]"></div>
+            <div class="absolute inset-x-5 bottom-0 h-4 rounded-full bg-cyan-300/10 blur-md"></div>
+            <div class="relative w-24 h-20 rounded-[1.25rem] border border-cyan-300/35 bg-gradient-to-b from-slate-800 to-black shadow-[inset_0_1px_18px_rgba(103,232,249,0.18),0_0_36px_rgba(8,145,178,0.38)]">
+              <div class="absolute -left-3 top-7 size-5 rounded-full border border-cyan-300/30 bg-slate-900"></div>
+              <div class="absolute -right-3 top-7 size-5 rounded-full border border-cyan-300/30 bg-slate-900"></div>
+              <div class="absolute left-5 top-6 size-4 rounded-full bg-cyan-300 shadow-[0_0_16px_rgba(103,232,249,0.95)] animate-pulse"></div>
+              <div class="absolute right-5 top-6 size-4 rounded-full bg-cyan-300 shadow-[0_0_16px_rgba(103,232,249,0.95)] animate-pulse"></div>
+              <div class="absolute left-1/2 top-12 h-2 w-10 -translate-x-1/2 rounded-full border border-cyan-300/40 bg-cyan-300/10"></div>
+            </div>
+          </div>
+          
+          <div class="text-center space-y-3">
+            <div class="flex items-center justify-center gap-2">
+              <span id="ai-state-dot" class="size-2 bg-cyan-300 rounded-full animate-pulse"></span>
+              <h4 class="text-sm font-black uppercase tracking-[4px] text-white/90">Robot AI</h4>
+            </div>
+            <div id="ai-state-label" class="inline-flex items-center justify-center rounded-full border border-cyan-300/30 bg-cyan-300/10 px-3 py-1 text-[10px] font-black uppercase tracking-[2px] text-cyan-200">Tayyorlanmoqda</div>
+            <p id="ai-sub-text" class="max-h-14 max-w-full overflow-y-auto break-words text-[11px] text-cyan-300 font-bold uppercase tracking-[2px] leading-relaxed scroll-contained">System Initializing...</p>
+            <div class="w-full rounded-xl border border-white/10 bg-black/35 p-3 text-left">
+              <div class="mb-1 text-[9px] font-black uppercase tracking-[2px] text-white/35">Siz aytdingiz</div>
+              <p id="ai-user-transcript" class="max-h-28 min-h-[40px] overflow-y-auto whitespace-pre-wrap break-words text-xs font-medium leading-relaxed text-white/75 scroll-contained">Hali nutq aniqlanmadi.</p>
+            </div>
+          </div>
+
+          <!-- Pulsing Bars -->
+          <div id="ai-visualizer" class="flex items-end justify-center gap-1.5 h-12 w-full px-4">
+            <div class="w-1.5 bg-cyan-300/40 h-4 rounded-full transition-all duration-300"></div>
+            <div class="w-1.5 bg-cyan-300/60 h-8 rounded-full transition-all duration-300"></div>
+            <div class="w-1.5 bg-cyan-300 h-10 rounded-full transition-all duration-300"></div>
+            <div class="w-1.5 bg-cyan-300/60 h-8 rounded-full transition-all duration-300"></div>
+            <div class="w-1.5 bg-cyan-300/40 h-4 rounded-full transition-all duration-300"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3">
+      <button id="ai-chat-btn" class="relative size-16 bg-[#050708] border border-white/15 text-white rounded-2xl flex items-center justify-center shadow-2xl hover:scale-105 active:scale-95 transition-all duration-500 group" aria-label="AI chat">
+        <div class="absolute inset-0 rounded-2xl bg-gradient-to-br from-emerald-400/20 to-cyan-500/20 opacity-0 transition-opacity duration-500 group-hover:opacity-100"></div>
+        <svg class="relative z-10 size-8 text-cyan-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/>
+          <path d="M8 9h8"/><path d="M8 13h5"/>
+        </svg>
+        <div class="absolute -top-1 -right-1 rounded-full bg-cyan-300 px-1.5 py-0.5 text-[8px] font-black text-black border-2 border-black">CHAT</div>
+      </button>
+
+      <!-- Live Call Toggle Button -->
+      <button id="ai-assistant-btn" class="relative size-20 bg-[#050708] border border-cyan-300/25 text-white rounded-2xl flex items-center justify-center shadow-2xl hover:scale-105 active:scale-95 transition-all duration-500 group overflow-visible" aria-label="AI live qo'ng'iroq">
+        <div id="ai-btn-bg" class="absolute inset-0 rounded-2xl bg-gradient-to-br from-cyan-500 via-blue-600 to-slate-950 opacity-0 transition-opacity duration-700"></div>
+        <div id="ai-pulse" class="absolute inset-0 rounded-2xl border-2 border-cyan-300/50 scale-100 opacity-0 transition-all duration-700"></div>
+        
+        <div class="relative z-10 size-12 rounded-xl border border-cyan-300/35 bg-black/50 flex items-center justify-center shadow-[inset_0_0_18px_rgba(103,232,249,0.16)]">
+          <svg id="ai-icon-bell" class="size-8 text-cyan-300 drop-shadow-[0_0_12px_rgba(103,232,249,0.8)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.78 19.78 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.78 19.78 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.35 1.89.66 2.78a2 2 0 0 1-.45 2.11L8.05 9.88a16 16 0 0 0 6.07 6.07l1.27-1.27a2 2 0 0 1 2.11-.45c.89.31 1.82.53 2.78.66A2 2 0 0 1 22 16.92z"/>
+          </svg>
+          <svg id="ai-icon-x" class="size-full hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+          </svg>
+        </div>
+        
+        <div class="absolute -top-1 -right-1 rounded-full bg-cyan-300 px-1.5 py-0.5 text-[8px] font-black text-black border-2 border-black">LIVE</div>
+      </button>
+      </div>
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
