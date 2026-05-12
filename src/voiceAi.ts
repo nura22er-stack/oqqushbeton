@@ -241,6 +241,7 @@ export class VoiceAiAssistant {
   sendTextInstruction(text: string) {
     if (!this.isActive) return;
     if (!this.setupComplete || this.ws?.readyState !== WebSocket.OPEN) {
+      this.updateTranscript('Gemini Live hali ulanmagan. Lokal zaxira ovoz ishlayapti.');
       this.speakLocal(this.extractSpeakableText(text), () => this.callbacks.onResponseDone?.());
       return;
     }
@@ -288,12 +289,12 @@ export class VoiceAiAssistant {
     this.setLiveState('connecting', 'Assalomu aleykum...');
     this.updateTranscript('Qo\'ng\'iroq ochilmoqda...');
     this.startVisualizer();
-    this.sendGreeting();
 
     if (!this.apiKey) {
       this.updateTranscript('Gemini API key topilmadi. Lokal ovozli boshqaruv ishlayapti.');
       this.isConnecting = false;
       this.setupComplete = false;
+      this.sendLocalGreeting();
       await this.prepareMicrophone(startId);
       this.startBrowserRecognition();
       return;
@@ -436,9 +437,9 @@ export class VoiceAiAssistant {
       this.setupComplete = true;
       this.isConnecting = false;
       this.reconnectAttempts = 0;
-      this.setLiveState('listening', 'Tinglayapman...');
-      this.updateTranscript('Qo\'ng\'iroq boshlandi. Gapiring.');
-      this.finishGreeting();
+      this.setLiveState('speaking', 'Gemini salomlashmoqda...');
+      this.updateTranscript('Gemini Live ulandi. Salomlashuv yuborildi.');
+      this.sendGreeting();
       return;
     }
 
@@ -778,6 +779,35 @@ export class VoiceAiAssistant {
 
   private sendGreeting() {
     if (this.greeted) return;
+    this.greeted = true;
+    this.awaitingGreeting = true;
+    this.greetingTurnComplete = false;
+    const greeting = 'Assalomu aleykum, men Oqqush Beton kompaniyasining virtual agentiman. Qanday yordam bera olaman?';
+    this.updateSubText(greeting);
+    if (this.setupComplete && this.ws?.readyState === WebSocket.OPEN) {
+      this.sendJson({
+        clientContent: {
+          turns: [{
+            role: 'user',
+            parts: [{
+              text: `Birinchi javob sifatida aynan shu gapni audio qilib ayt, boshqa hech narsa qo'shma: "${greeting}"`,
+            }],
+          }],
+          turnComplete: true,
+        },
+      });
+      this.armResponseTimer();
+      window.setTimeout(() => {
+        if (this.isActive && this.awaitingGreeting && !this.hasPendingAudio()) this.finishGreeting();
+      }, 4200);
+      return;
+    }
+
+    this.sendLocalGreeting();
+  }
+
+  private sendLocalGreeting() {
+    if (this.greeted && !this.awaitingGreeting) return;
     this.greeted = true;
     this.awaitingGreeting = true;
     this.greetingTurnComplete = false;
