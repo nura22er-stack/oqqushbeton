@@ -6,8 +6,19 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
 PORT = int(os.environ.get("OQQUSH_SYNC_PORT", "3050"))
-BACKUP_PATH = os.environ.get("OQQUSH_BACKUP_PATH", "/var/www/oqqush-beton/site-backup.json")
+BACKUP_PATH = os.environ.get("OQQUSH_BACKUP_PATH", "/var/lib/oqqush/site-backup.json")
 MAX_BODY_BYTES = 140 * 1024 * 1024
+
+
+def build_backup_signature(backup):
+    local_storage = backup.get("localStorage") or {}
+    parts = [
+        str(backup.get("version") or ""),
+        str(backup.get("exportedAt") or ""),
+        str(len(local_storage.get("oqqush_slideshows") or "")),
+        str(len(backup.get("media") or {})),
+    ]
+    return ":".join(parts)
 
 
 def read_current_admin_pass():
@@ -46,6 +57,7 @@ class SiteSyncHandler(BaseHTTPRequestHandler):
                     "ok": True,
                     "version": backup.get("version"),
                     "exportedAt": backup.get("exportedAt"),
+                    "signature": build_backup_signature(backup),
                 })
                 return
 
@@ -93,7 +105,11 @@ class SiteSyncHandler(BaseHTTPRequestHandler):
             with os.fdopen(fd, "w", encoding="utf-8") as file:
                 json.dump(backup, file, ensure_ascii=False)
             os.replace(tmp_path, BACKUP_PATH)
-            self.send_json(200, {"ok": True, "exportedAt": backup["exportedAt"]})
+            self.send_json(200, {
+                "ok": True,
+                "exportedAt": backup["exportedAt"],
+                "signature": build_backup_signature(backup),
+            })
         except Exception as error:
             self.send_json(500, {"ok": False, "error": str(error)})
 

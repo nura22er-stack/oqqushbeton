@@ -3290,8 +3290,8 @@ ${this.getAiContext()}`,
         body: JSON.stringify(backup),
       });
       if (!response.ok) throw new Error(`Sync status ${response.status}`);
-      const result = await response.json().catch(() => ({})) as {exportedAt?: string};
-      const seedVersion = result.exportedAt || backup.exportedAt || String(backup.version || 2);
+      const result = await response.json().catch(() => ({})) as {exportedAt?: string; signature?: string};
+      const seedVersion = result.signature || result.exportedAt || backup.exportedAt || String(backup.version || 2);
       localStorage.setItem('oqqush_bundled_backup_version', seedVersion);
     } catch (error) {
       console.error('Server sync error:', error);
@@ -3335,8 +3335,9 @@ ${this.getAiContext()}`,
       const markerKey = 'oqqush_bundled_backup_version';
       const metaResponse = await fetch('/api/site-backup?meta=1', {cache: 'no-store'});
       if (metaResponse.ok) {
-        const meta = await metaResponse.json() as {exportedAt?: string};
-        if (meta.exportedAt && localStorage.getItem(markerKey) === meta.exportedAt) return;
+        const meta = await metaResponse.json() as {exportedAt?: string; signature?: string};
+        const metaVersion = meta.signature || meta.exportedAt;
+        if (metaVersion && localStorage.getItem(markerKey) === metaVersion) return;
       }
 
       const response = await fetch('/api/site-backup', {cache: 'no-store'});
@@ -3348,7 +3349,7 @@ ${this.getAiContext()}`,
         localStorage?: Record<string, string | null>;
         media?: Record<string, string>;
       };
-      const seedVersion = backup.exportedAt || String(backup.version || 1);
+      const seedVersion = this.getBackupVersionMarker(backup);
       if (!backup.localStorage || localStorage.getItem(markerKey) === seedVersion) return;
 
       Object.entries(backup.localStorage).forEach(([key, value]) => {
@@ -3363,6 +3364,21 @@ ${this.getAiContext()}`,
     } finally {
       this.siteSyncReady = true;
     }
+  }
+
+  private getBackupVersionMarker(backup: {
+    version?: number;
+    exportedAt?: string;
+    localStorage?: Record<string, string | null>;
+    media?: Record<string, string>;
+  }) {
+    const localStorageData = backup.localStorage || {};
+    return [
+      String(backup.version || 1),
+      backup.exportedAt || '',
+      String((localStorageData.oqqush_slideshows || '').length),
+      String(Object.keys(backup.media || {}).length),
+    ].join(':');
   }
 
   private async getMediaBlobUrl(key: string) {
