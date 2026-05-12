@@ -2725,9 +2725,10 @@ ${this.getAiContext()}`,
       if (!container || images.length === 0) return;
       container.innerHTML = '';
       if (isMobile) {
+        const mobileImage = images[images.length - 1] || images[0];
         const div = document.createElement('div');
         div.className = 'slide-div opacity-100';
-        div.style.backgroundImage = `url(${images[0]})`;
+        div.style.backgroundImage = `url(${mobileImage})`;
         const overlay = document.createElement('div');
         overlay.className = 'absolute inset-0 z-[1] bg-black/25';
         container.appendChild(div);
