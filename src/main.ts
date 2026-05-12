@@ -195,6 +195,10 @@ class App {
   private siteSyncTimer: number | null = null;
   private siteSyncInFlight = false;
   private siteSyncReady = false;
+  private siteSyncPendingAfterReady = false;
+  private siteSyncImportInFlight = false;
+  private siteSyncPollTimer: number | null = null;
+  private lastServerSyncCheck = 0;
   private slideshowTimers: number[] = [];
 
   constructor() {
@@ -204,8 +208,9 @@ class App {
     this.initAnimations();
     this.render();
     this.migrateStoredImages();
-    const syncDelay = this.isMobileViewport() ? 4500 : 600;
+    const syncDelay = this.isMobileViewport() ? 900 : 500;
     window.setTimeout(() => void this.importBundledSiteBackupIfNeeded(), syncDelay);
+    this.startServerSiteSyncWatcher();
     setTimeout(() => this.getAiContext('full'), 300);
   }
 
@@ -2720,17 +2725,16 @@ ${this.getAiContext()}`,
       if (!group || !this.slideImages[group]) return;
       
       const imageWidth = isMobile ? 1200 : 2400;
-      const images = this.slideImages[group].map(img => this.formatImg(img, imageWidth)).filter(Boolean);
+      const images = this.slideImages[group].map(img => this.formatImg(img, imageWidth)).filter(Boolean).reverse();
       const container = sec.querySelector('.slide-container');
       if (!container || images.length === 0) return;
       container.innerHTML = '';
       if (isMobile) {
-        const mobileImage = images[images.length - 1] || images[0];
         const div = document.createElement('div');
         div.className = 'slide-div opacity-100';
-        div.style.backgroundImage = `url(${mobileImage})`;
+        div.style.backgroundImage = `url(${images[0]})`;
         const overlay = document.createElement('div');
-        overlay.className = 'absolute inset-0 z-[1] bg-black/25';
+        overlay.className = 'absolute inset-0 z-[1] bg-black/10';
         container.appendChild(div);
         container.appendChild(overlay);
         this.hydrateProjectMediaElements(container);
@@ -3267,7 +3271,10 @@ ${this.getAiContext()}`,
   }
 
   private queueServerSiteSync(delay = 1200) {
-    if (!this.siteSyncReady) return;
+    if (!this.siteSyncReady) {
+      this.siteSyncPendingAfterReady = true;
+      return;
+    }
     if (window.location.hostname !== 'oqqushbeton.duckdns.org') return;
     if (this.siteSyncTimer) window.clearTimeout(this.siteSyncTimer);
     this.siteSyncTimer = window.setTimeout(() => {
@@ -3293,6 +3300,7 @@ ${this.getAiContext()}`,
       const result = await response.json().catch(() => ({})) as {exportedAt?: string; signature?: string};
       const seedVersion = result.signature || result.exportedAt || backup.exportedAt || String(backup.version || 2);
       localStorage.setItem('oqqush_bundled_backup_version', seedVersion);
+      localStorage.setItem('oqqush_last_local_sync_at', String(Date.now()));
     } catch (error) {
       console.error('Server sync error:', error);
       this.toast('Serverga sinxronlashda xatolik', true);
@@ -3330,7 +3338,10 @@ ${this.getAiContext()}`,
       this.siteSyncReady = true;
       return;
     }
+    if (this.siteSyncImportInFlight) return;
+    if (this.siteSyncInFlight || this.siteSyncTimer) return;
 
+    this.siteSyncImportInFlight = true;
     try {
       const markerKey = 'oqqush_bundled_backup_version';
       const metaResponse = await fetch('/api/site-backup?meta=1', {cache: 'no-store'});
@@ -3358,11 +3369,54 @@ ${this.getAiContext()}`,
       });
       await this.writeMediaBackup(backup.media || {});
       localStorage.setItem(markerKey, seedVersion);
-      window.location.reload();
+      this.loadData();
+      this.render();
+      this.initSlideshows();
+      this.renderAdminProductsList();
+      this.renderAdminProductSectionsList();
+      this.renderAdminProjectsList();
+      this.renderAdminTransportList();
+      this.renderAdminServicesList();
+      this.renderAdminLabList();
+      this.renderAdminSlideshows();
     } catch (error) {
       console.error('Bundled backup import error:', error);
     } finally {
+      this.siteSyncImportInFlight = false;
       this.siteSyncReady = true;
+      if (this.siteSyncPendingAfterReady) {
+        this.siteSyncPendingAfterReady = false;
+        this.queueServerSiteSync(400);
+      }
+    }
+  }
+
+  private startServerSiteSyncWatcher() {
+    if (window.location.hostname !== 'oqqushbeton.duckdns.org') return;
+    this.siteSyncPollTimer = window.setInterval(() => {
+      void this.checkServerSiteBackupFreshness();
+    }, this.isMobileViewport() ? 12000 : 18000);
+    window.addEventListener('focus', () => void this.checkServerSiteBackupFreshness(true));
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) void this.checkServerSiteBackupFreshness(true);
+    });
+  }
+
+  private async checkServerSiteBackupFreshness(force = false) {
+    if (this.siteSyncInFlight || this.siteSyncImportInFlight || this.siteSyncTimer) return;
+    const now = Date.now();
+    if (!force && now - this.lastServerSyncCheck < 10000) return;
+    this.lastServerSyncCheck = now;
+    try {
+      const response = await fetch('/api/site-backup?meta=1', {cache: 'no-store'});
+      if (!response.ok) return;
+      const meta = await response.json() as {exportedAt?: string; signature?: string};
+      const version = meta.signature || meta.exportedAt;
+      if (version && localStorage.getItem('oqqush_bundled_backup_version') !== version) {
+        await this.importBundledSiteBackupIfNeeded();
+      }
+    } catch (error) {
+      console.error('Server freshness check error:', error);
     }
   }
 

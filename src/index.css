@@ -270,11 +270,11 @@
     background-size: cover;
     background-position: center center;
     transition-duration: 0ms;
-    filter: brightness(0.62) contrast(1.04) saturate(1.02);
+    filter: brightness(0.78) contrast(1.06) saturate(1.04);
   }
 
   #home .slide-div {
-    background-position: center top;
+    background-position: center center;
   }
 
   #services .slide-div,
