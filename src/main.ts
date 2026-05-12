@@ -2827,13 +2827,15 @@ ${this.getAiContext()}`,
     sections.forEach(sec => {
       const group = (sec as HTMLElement).dataset.group;
       if (!group || !this.slideImages[group]) return;
+      const sectionEl = sec as HTMLElement;
+      const isPrioritySection = sectionEl.id === 'home' || sectionEl.id === 'about' || sectionEl.getBoundingClientRect().top < window.innerHeight * 1.4;
       
       const imageWidth = isMobile ? 1200 : 2400;
       const images = this.slideImages[group].map(img => this.formatImg(img, imageWidth)).filter(Boolean).reverse();
       const container = sec.querySelector('.slide-container');
       if (!container || images.length === 0) return;
       container.innerHTML = '';
-      (sec as HTMLElement).classList.remove('bg-ready');
+      sectionEl.classList.remove('bg-ready');
       if (isMobile) {
         const div = document.createElement('div');
         div.className = 'slide-div opacity-100';
@@ -2841,7 +2843,7 @@ ${this.getAiContext()}`,
         overlay.className = 'absolute inset-0 z-[1] bg-black/10';
         container.appendChild(div);
         container.appendChild(overlay);
-        this.queueBackgroundLoad(div, images[0], sec as HTMLElement);
+        this.queueBackgroundLoad(div, images[0], sectionEl, isPrioritySection);
         this.hydrateProjectMediaElements(container);
         return;
       }
@@ -2859,8 +2861,8 @@ ${this.getAiContext()}`,
       container.appendChild(div1);
       container.appendChild(div2);
       container.appendChild(overlay);
-      this.queueBackgroundLoad(div1, images[0], sec as HTMLElement);
-      this.queueBackgroundLoad(div2, images[1], sec as HTMLElement);
+      this.queueBackgroundLoad(div1, images[0], sectionEl, isPrioritySection);
+      this.queueBackgroundLoad(div2, images[1], sectionEl, isPrioritySection && sectionEl.id === 'home');
       this.hydrateProjectMediaElements(container);
 
       let current = 0;
@@ -2871,13 +2873,13 @@ ${this.getAiContext()}`,
         current = (current + 1) % images.length;
         const nextImg = images[(current + 1) % images.length];
         
-        this.queueBackgroundLoad(nextDiv, images[current], sec as HTMLElement);
+        this.queueBackgroundLoad(nextDiv, images[current], sectionEl);
         this.hydrateProjectMediaElements(container);
         nextDiv.classList.replace('opacity-0', 'opacity-100');
         activeDiv.classList.replace('opacity-100', 'opacity-0');
 
         setTimeout(() => {
-           this.queueBackgroundLoad(activeDiv, nextImg, sec as HTMLElement);
+           this.queueBackgroundLoad(activeDiv, nextImg, sectionEl);
            this.hydrateProjectMediaElements(container);
            [activeDiv, nextDiv] = [nextDiv, activeDiv];
         }, 1500);
@@ -2886,10 +2888,14 @@ ${this.getAiContext()}`,
     });
   }
 
-  private queueBackgroundLoad(target: HTMLElement, imageUrl: string, section: HTMLElement) {
+  private queueBackgroundLoad(target: HTMLElement, imageUrl: string, section: HTMLElement, immediate = false) {
     if (!imageUrl) return;
     target.dataset.bgSrc = imageUrl;
     target.dataset.bgSection = section.id || section.dataset.group || '';
+    if (immediate) {
+      void this.applyBackgroundImageWhenIdle(target, imageUrl, section, true);
+      return;
+    }
     if (!this.backgroundLoadObserver) {
       this.backgroundLoadObserver = new IntersectionObserver(entries => {
         entries.forEach(entry => {
@@ -2897,16 +2903,17 @@ ${this.getAiContext()}`,
           const element = entry.target as HTMLElement;
           this.backgroundLoadObserver?.unobserve(element);
           const hostSection = element.closest<HTMLElement>('.slideshow-section');
-          void this.applyBackgroundImageWhenIdle(element, element.dataset.bgSrc || '', hostSection);
+          const urgent = hostSection?.id === 'home';
+          void this.applyBackgroundImageWhenIdle(element, element.dataset.bgSrc || '', hostSection, urgent);
         });
-      }, {rootMargin: '280px 0px'});
+      }, {rootMargin: '720px 0px'});
     }
     this.backgroundLoadObserver.observe(target);
   }
 
-  private async applyBackgroundImageWhenIdle(target: HTMLElement, imageUrl: string, section: HTMLElement | null) {
+  private async applyBackgroundImageWhenIdle(target: HTMLElement, imageUrl: string, section: HTMLElement | null, immediate = false) {
     if (!imageUrl) return;
-    await this.waitForBrowserIdle();
+    if (!immediate) await this.waitForBrowserIdle();
     const image = new Image();
     image.decoding = 'async';
     image.loading = 'eager';

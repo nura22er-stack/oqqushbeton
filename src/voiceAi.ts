@@ -49,8 +49,8 @@ const RESPONSE_TIMEOUT_MS = 15000;
 const MAX_AUDIO_QUEUE_SEC = 2.5;
 const OUTPUT_START_LEAD_SEC = 0.05;
 const SPEECH_RMS_THRESHOLD = 0.006;
-const DEFAULT_SILENCE_THRESHOLD = 0.0085;
-const BARGE_IN_RMS_THRESHOLD = 0.028;
+const DEFAULT_SILENCE_THRESHOLD = 0.0125;
+const BARGE_IN_RMS_THRESHOLD = 0.04;
 
 const CYRILLIC_TO_LATIN: Record<string, string> = {
   а: 'a',
@@ -211,6 +211,7 @@ export class VoiceAiAssistant {
   private playbackToken = 0;
   private currentContext = '';
   private silenceCounter = 0;
+  private speechFrameStreak = 0;
   private closeAfterFarewell = false;
   private farewellAudioStarted = false;
   private closeAfterFarewellTimer: number | null = null;
@@ -296,7 +297,6 @@ export class VoiceAiAssistant {
       this.setupComplete = false;
       this.sendLocalGreeting();
       await this.prepareMicrophone(startId);
-      this.startBrowserRecognition();
       return;
     }
 
@@ -307,7 +307,6 @@ export class VoiceAiAssistant {
 
       if (!this.isActive || startId !== this.startId) return;
       this.microphonePromise = this.prepareMicrophone(startId);
-      this.startBrowserRecognition();
       this.sendLocalGreeting();
       this.connectSocket(startId);
     } catch (error) {
@@ -316,7 +315,6 @@ export class VoiceAiAssistant {
       this.updateTranscript(error instanceof Error ? this.limit(error.message) : 'Gemini Live ulanmagan. Lokal boshqaruv ishlayapti.');
       this.isConnecting = false;
       await this.prepareMicrophone(startId);
-      this.startBrowserRecognition();
     }
   }
 
@@ -440,7 +438,10 @@ export class VoiceAiAssistant {
       this.reconnectAttempts = 0;
       this.setLiveState(this.awaitingGreeting ? 'speaking' : 'listening', this.awaitingGreeting ? 'AI salomlashmoqda...' : 'Tinglayapman...');
       this.updateTranscript(this.awaitingGreeting ? 'Gemini Live ulandi. Salomlashuv yuborildi.' : 'Gemini Live ulandi. Endi gapiring.');
-      if (this.greeted && !this.awaitingGreeting && this.mediaStream) void this.startMicrophoneStream();
+      if (this.greeted && !this.awaitingGreeting && this.mediaStream) {
+        this.startBrowserRecognition();
+        void this.startMicrophoneStream();
+      }
       this.sendGreeting();
       return;
     }
@@ -609,10 +610,14 @@ export class VoiceAiAssistant {
     const silenceThreshold = this.callbacks.silenceThreshold ?? DEFAULT_SILENCE_THRESHOLD;
     if (rms < silenceThreshold) {
       this.silenceCounter += 1;
+      this.speechFrameStreak = 0;
       if (this.silenceCounter > 2) return;
     } else {
       this.silenceCounter = 0;
+      this.speechFrameStreak += 1;
     }
+
+    if (this.speechFrameStreak < 2 && rms < silenceThreshold * 1.7) return;
 
     const now = performance.now();
     if (rms > SPEECH_RMS_THRESHOLD && now - this.lastStateAt > 40) {
@@ -647,7 +652,7 @@ export class VoiceAiAssistant {
       audio: {
         echoCancellation: true,
         noiseSuppression: true,
-        autoGainControl: true,
+        autoGainControl: false,
         channelCount: 1,
       },
     };
@@ -679,6 +684,7 @@ export class VoiceAiAssistant {
     this.sourceNode = null;
     this.micBuffer = [];
     this.silenceCounter = 0;
+    this.speechFrameStreak = 0;
 
     if (stopTracks) {
       this.mediaStream?.getTracks().forEach(track => track.stop());
@@ -840,6 +846,7 @@ export class VoiceAiAssistant {
     this.setLiveState('listening', 'Tinglayapman...');
     this.updateTranscript('Endi gapiring, men eshityapman.');
     this.callbacks.onGreetingDone?.();
+    this.startBrowserRecognition();
     if (this.mediaStream) this.startMicrophoneStream();
     else {
       this.updateTranscript('Mikrofon tayyorlanmoqda...');
@@ -1019,6 +1026,7 @@ export class VoiceAiAssistant {
   private handleUserTranscript(rawText: string) {
     const text = cleanUzbekText(rawText);
     if (!text || text === this.lastUserTranscript) return;
+    if (this.awaitingGreeting) return;
     this.lastUserTranscript = text;
     this.updateTranscript(this.limit(text));
 
