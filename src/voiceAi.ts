@@ -35,8 +35,6 @@ const LIVE_ENDPOINT = 'wss://generativelanguage.googleapis.com/ws/google.ai.gene
 const DEFAULT_MODEL = 'gemini-2.5-flash-preview-native-audio-dialog';
 const FALLBACK_MODELS = [
   'gemini-2.5-flash-preview-native-audio-dialog',
-  'gemini-2.5-flash-native-audio-preview-12-2025',
-  'gemini-2.5-flash-native-audio-preview-09-2025',
 ];
 const INPUT_SAMPLE_RATE = 16000;
 const OUTPUT_SAMPLE_RATE = 24000;
@@ -307,7 +305,6 @@ export class VoiceAiAssistant {
 
       if (!this.isActive || startId !== this.startId) return;
       this.microphonePromise = this.prepareMicrophone(startId);
-      this.sendLocalGreeting();
       this.connectSocket(startId);
     } catch (error) {
       if (!this.isActive || startId !== this.startId) return;

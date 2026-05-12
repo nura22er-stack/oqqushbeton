@@ -2913,6 +2913,10 @@ ${this.getAiContext()}`,
 
   private async applyBackgroundImageWhenIdle(target: HTMLElement, imageUrl: string, section: HTMLElement | null, immediate = false) {
     if (!imageUrl) return;
+    if (immediate) {
+      target.style.backgroundImage = `url(${imageUrl})`;
+      section?.classList.add('bg-ready');
+    }
     if (!immediate) await this.waitForBrowserIdle();
     const image = new Image();
     image.decoding = 'async';
