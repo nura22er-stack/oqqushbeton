@@ -91,6 +91,15 @@
     @apply bg-white/10 border border-white/20 backdrop-blur-2xl px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 transition-all duration-300;
   }
 
+  .about-copy p {
+    color: rgba(255,255,255,0.97) !important;
+    text-shadow: 0 1px 20px rgba(0,0,0,0.42);
+  }
+
+  .about-copy .border-t {
+    border-color: rgba(255,255,255,0.14) !important;
+  }
+
   .mobile-nav-link {
     @apply text-4xl font-heading tracking-[8px] uppercase text-white/90 hover:text-white transition-all hover:scale-110;
   }
