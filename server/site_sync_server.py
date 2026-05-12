@@ -12,13 +12,12 @@ MAX_BODY_BYTES = 140 * 1024 * 1024
 
 def build_backup_signature(backup):
     local_storage = backup.get("localStorage") or {}
-    parts = [
-        str(backup.get("version") or ""),
-        str(backup.get("exportedAt") or ""),
-        str(len(local_storage.get("oqqush_slideshows") or "")),
-        str(len(backup.get("media") or {})),
-    ]
-    return ":".join(parts)
+    payload = json.dumps(local_storage, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    hash_value = 2166136261
+    for char in payload:
+        hash_value ^= ord(char)
+        hash_value = (hash_value * 16777619) & 0xffffffff
+    return f"sig-{hash_value:08x}"
 
 
 def read_current_admin_pass():

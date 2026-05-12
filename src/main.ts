@@ -2512,7 +2512,17 @@ ${this.getAiContext()}`,
   }
 
   private buildLocalChatAnswer(text: string) {
+    const sectionTarget = this.resolveNavigationTarget(text);
     const panelTarget = this.resolvePanelKeywordTarget(text);
+    if (
+      sectionTarget?.type === 'section' &&
+      this.hasInfoIntent(text) &&
+      !panelTarget &&
+      !this.userAskedPanelOpen(text)
+    ) {
+      return this.buildSectionInfoAnswer(sectionTarget.key);
+    }
+
     if (panelTarget && (this.hasInfoIntent(text) || this.userAskedPanelOpen(text) || this.isExactPanelKeyword(text, panelTarget))) {
       this.openLivePresentationTarget(panelTarget, 'user');
       const item = this.getPanelViewerItem(panelTarget.collection, panelTarget.index);
@@ -2559,6 +2569,56 @@ ${this.getAiContext()}`,
     }
 
     if (['aloqa', 'telefon', 'telegram', 'instagram', 'manzil'].some(word => text.includes(word))) {
+      return [
+        `1. **Telefonlar** - ${this.social.ph || 'ko\'rsatilmagan'}`,
+        `2. **Telegram** - ${this.social.tg || 'ko\'rsatilmagan'}`,
+        `3. **Instagram** - ${this.social.ig || 'ko\'rsatilmagan'}`,
+      ].join('\n');
+    }
+
+    return null;
+  }
+
+  private buildSectionInfoAnswer(sectionKey: string) {
+    if (['transport', 'tech', 'texnika'].includes(sectionKey)) {
+      return this.formatPanelAnswer(this.transport.map(item => this.panelFromTransport(item)));
+    }
+
+    if (['products', 'mahsulotlar'].includes(sectionKey)) {
+      return this.formatPanelAnswer(this.getProductReadablePanels());
+    }
+
+    if (sectionKey === 'laboratory') {
+      return this.formatPanelAnswer(this.getLaboratoryViewerItems());
+    }
+
+    if (sectionKey === 'projects') {
+      return this.formatPanelAnswer(this.projects.map(item => ({
+        title: item.name,
+        image: item.image,
+        description: `${item.location}\n${item.year}`,
+        eyebrow: 'Bajarilgan ish',
+      })));
+    }
+
+    if (sectionKey === 'services') {
+      return this.formatPanelAnswer(this.services.map(item => ({
+        title: item.name,
+        image: item.image,
+        description: item.description,
+        eyebrow: 'Xizmat',
+      })));
+    }
+
+    if (sectionKey === 'about') {
+      return [
+        '1. **OQQUSH BETON** - Zamonaviy qurilish kompaniyasi, ishonch, tajriba va sifatga sodiqlik tamoyillari asosida ishlaydi.',
+        '2. **ISHLAB CHIQARISH** - Zamonaviy uskunalar va qat\'iy laboratoriya nazorati ostida olib boriladi.',
+        '3. **TEXNIKA VA QUVVAT** - Yirik hajmdagi buyurtmalarni qisqa muddatda, sifatni pasaytirmasdan bajaradi.',
+      ].join('\n');
+    }
+
+    if (sectionKey === 'footer') {
       return [
         `1. **Telefonlar** - ${this.social.ph || 'ko\'rsatilmagan'}`,
         `2. **Telegram** - ${this.social.tg || 'ko\'rsatilmagan'}`,
@@ -3270,7 +3330,7 @@ ${this.getAiContext()}`,
     };
   }
 
-  private queueServerSiteSync(delay = 1200) {
+  private queueServerSiteSync(delay = 450) {
     if (!this.siteSyncReady) {
       this.siteSyncPendingAfterReady = true;
       return;
@@ -3405,7 +3465,7 @@ ${this.getAiContext()}`,
     if (window.location.hostname !== 'oqqushbeton.duckdns.org') return;
     this.siteSyncPollTimer = window.setInterval(() => {
       void this.checkServerSiteBackupFreshness();
-    }, this.isMobileViewport() ? 12000 : 18000);
+    }, this.isMobileViewport() ? 4000 : 5000);
     window.addEventListener('focus', () => void this.checkServerSiteBackupFreshness(true));
     document.addEventListener('visibilitychange', () => {
       if (!document.hidden) void this.checkServerSiteBackupFreshness(true);
@@ -3415,7 +3475,7 @@ ${this.getAiContext()}`,
   private async checkServerSiteBackupFreshness(force = false) {
     if (this.siteSyncInFlight || this.siteSyncImportInFlight || this.siteSyncTimer) return;
     const now = Date.now();
-    if (!force && now - this.lastServerSyncCheck < 10000) return;
+    if (!force && now - this.lastServerSyncCheck < 2500) return;
     this.lastServerSyncCheck = now;
     try {
       const response = await fetch('/api/site-backup?meta=1', {cache: 'no-store'});
@@ -3442,22 +3502,48 @@ ${this.getAiContext()}`,
     localStorage?: Record<string, string | null>;
     media?: Record<string, string>;
   }) {
-    const localStorageData = backup.localStorage || {};
-    return [
-      String(backup.version || 1),
-      backup.exportedAt || '',
-      String((localStorageData.oqqush_slideshows || '').length),
-      String(Object.keys(backup.media || {}).length),
-    ].join(':');
+    return this.buildBackupSignatureFromStorage(backup.localStorage || {});
   }
 
   private localStorageMatchesServerSignature(signature?: string) {
     if (!signature) return true;
-    const parts = signature.split(':');
-    if (parts.length < 3) return true;
-    const expectedSlidesLength = Number(parts[parts.length - 2]);
-    if (!Number.isFinite(expectedSlidesLength)) return true;
-    return (localStorage.getItem('oqqush_slideshows') || '').length === expectedSlidesLength;
+    return this.buildCurrentLocalSignature() === signature;
+  }
+
+  private buildCurrentLocalSignature() {
+    return this.buildBackupSignatureFromStorage(this.getRelevantSiteLocalStorage());
+  }
+
+  private getRelevantSiteLocalStorage() {
+    const keys = [
+      'oqqush_projects',
+      'oqqush_transport',
+      'oqqush_products',
+      'oqqush_product_sections',
+      'oqqush_social',
+      'oqqush_settings',
+      'admin_pass',
+      'oqqush_slideshows',
+      'oqqush_lab',
+      'oqqush_services',
+    ];
+    return Object.fromEntries(keys.map(key => [key, localStorage.getItem(key)]));
+  }
+
+  private buildBackupSignatureFromStorage(storage: Record<string, string | null>) {
+    const ordered = Object.keys(storage)
+      .sort()
+      .reduce<Record<string, string | null>>((acc, key) => {
+        acc[key] = storage[key] ?? null;
+        return acc;
+      }, {});
+    const source = JSON.stringify(ordered);
+    let hash = 2166136261;
+    for (let index = 0; index < source.length; index += 1) {
+      hash ^= source.charCodeAt(index);
+      hash = Math.imul(hash, 16777619);
+    }
+    return `sig-${(hash >>> 0).toString(16)}`;
   }
 
   private async getMediaBlobUrl(key: string) {

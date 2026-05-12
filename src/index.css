@@ -273,6 +273,33 @@
     padding: 5rem 1.25rem 2rem;
     justify-content: flex-start;
     overflow-y: auto;
+    backdrop-filter: blur(10px);
+    transition-duration: 220ms;
+  }
+
+  .admin-scroll,
+  #admin-tabs-content,
+  #ai-chat-messages {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  #admin-modal .glass,
+  #ai-chat-panel,
+  #ai-status-box,
+  #admin-sidebar {
+    backdrop-filter: blur(12px) !important;
+  }
+
+  #admin-overlay,
+  #modal-backdrop,
+  #panel-viewer-backdrop,
+  #content-modal,
+  #transport-modal {
+    backdrop-filter: blur(8px) !important;
+  }
+
+  #admin-sidebar {
+    transition-duration: 220ms !important;
   }
 
   .slide-div {
