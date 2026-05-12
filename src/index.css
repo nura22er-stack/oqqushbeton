@@ -53,11 +53,28 @@
   /* Slideshow CSS */
   .slide-container {
     @apply absolute inset-0 z-0 overflow-hidden;
+    background-color: #0b0b0f;
   }
 
   .slide-div {
     @apply absolute inset-0 size-full bg-cover bg-center transition-opacity duration-[1500ms] ease-in-out;
     filter: brightness(0.55) contrast(1.08) saturate(1.05);
+    will-change: opacity, transform;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+  }
+
+  .slideshow-section {
+    background-color: #0b0b0f;
+    contain: paint;
+  }
+
+  .slideshow-section:not(.bg-ready) .slide-div {
+    opacity: 0;
+  }
+
+  .slideshow-section.bg-ready .slide-div {
+    opacity: 1;
   }
 
   .admin-scroll::-webkit-scrollbar {
@@ -204,6 +221,11 @@
 }
 
 @media (max-width: 767px) {
+  .slideshow-section {
+    content-visibility: auto;
+    contain-intrinsic-size: 720px;
+  }
+
   html,
   body,
   #app {
@@ -467,12 +489,16 @@
   }
 
   .glass-card,
-  .slide-div,
   #products-list-grid .size-full,
   #transport-grid .size-full,
   #projects-grid video,
   #projects-grid .size-full {
     will-change: auto !important;
+  }
+
+  .slide-div {
+    will-change: opacity, transform !important;
+    transform: translateZ(0);
   }
 
   #products-list-grid > *,

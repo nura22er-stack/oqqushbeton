@@ -200,6 +200,7 @@ class App {
   private siteSyncPollTimer: number | null = null;
   private lastServerSyncCheck = 0;
   private slideshowTimers: number[] = [];
+  private backgroundLoadObserver: IntersectionObserver | null = null;
 
   constructor() {
     this.loadData();
@@ -2804,14 +2805,15 @@ ${this.getAiContext()}`,
       const container = sec.querySelector('.slide-container');
       if (!container || images.length === 0) return;
       container.innerHTML = '';
+      (sec as HTMLElement).classList.remove('bg-ready');
       if (isMobile) {
         const div = document.createElement('div');
         div.className = 'slide-div opacity-100';
-        div.style.backgroundImage = `url(${images[0]})`;
         const overlay = document.createElement('div');
         overlay.className = 'absolute inset-0 z-[1] bg-black/10';
         container.appendChild(div);
         container.appendChild(overlay);
+        this.queueBackgroundLoad(div, images[0], sec as HTMLElement);
         this.hydrateProjectMediaElements(container);
         return;
       }
@@ -2819,11 +2821,9 @@ ${this.getAiContext()}`,
       
       const div1 = document.createElement('div');
       div1.className = 'slide-div opacity-100';
-      div1.style.backgroundImage = `url(${images[0]})`;
       
       const div2 = document.createElement('div');
       div2.className = 'slide-div opacity-0';
-      div2.style.backgroundImage = `url(${images[1]})`;
 
       const overlay = document.createElement('div');
       overlay.className = 'absolute inset-0 z-[1] bg-black/25';
@@ -2831,6 +2831,8 @@ ${this.getAiContext()}`,
       container.appendChild(div1);
       container.appendChild(div2);
       container.appendChild(overlay);
+      this.queueBackgroundLoad(div1, images[0], sec as HTMLElement);
+      this.queueBackgroundLoad(div2, images[1], sec as HTMLElement);
       this.hydrateProjectMediaElements(container);
 
       let current = 0;
@@ -2841,18 +2843,69 @@ ${this.getAiContext()}`,
         current = (current + 1) % images.length;
         const nextImg = images[(current + 1) % images.length];
         
-        nextDiv.style.backgroundImage = `url(${images[current]})`;
+        this.queueBackgroundLoad(nextDiv, images[current], sec as HTMLElement);
         this.hydrateProjectMediaElements(container);
         nextDiv.classList.replace('opacity-0', 'opacity-100');
         activeDiv.classList.replace('opacity-100', 'opacity-0');
 
         setTimeout(() => {
-           activeDiv.style.backgroundImage = `url(${nextImg})`;
+           this.queueBackgroundLoad(activeDiv, nextImg, sec as HTMLElement);
            this.hydrateProjectMediaElements(container);
            [activeDiv, nextDiv] = [nextDiv, activeDiv];
         }, 1500);
       }, 6000);
       this.slideshowTimers.push(timer);
+    });
+  }
+
+  private queueBackgroundLoad(target: HTMLElement, imageUrl: string, section: HTMLElement) {
+    if (!imageUrl) return;
+    target.dataset.bgSrc = imageUrl;
+    target.dataset.bgSection = section.id || section.dataset.group || '';
+    if (!this.backgroundLoadObserver) {
+      this.backgroundLoadObserver = new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+          if (!entry.isIntersecting) return;
+          const element = entry.target as HTMLElement;
+          this.backgroundLoadObserver?.unobserve(element);
+          const hostSection = element.closest<HTMLElement>('.slideshow-section');
+          void this.applyBackgroundImageWhenIdle(element, element.dataset.bgSrc || '', hostSection);
+        });
+      }, {rootMargin: '280px 0px'});
+    }
+    this.backgroundLoadObserver.observe(target);
+  }
+
+  private async applyBackgroundImageWhenIdle(target: HTMLElement, imageUrl: string, section: HTMLElement | null) {
+    if (!imageUrl) return;
+    await this.waitForBrowserIdle();
+    const image = new Image();
+    image.decoding = 'async';
+    image.loading = 'eager';
+    image.src = imageUrl;
+    try {
+      if (typeof image.decode === 'function') await image.decode();
+      else await new Promise<void>((resolve, reject) => {
+        image.onload = () => resolve();
+        image.onerror = () => reject(new Error('Background decode failed'));
+      });
+    } catch {
+      // If decode fails, let the browser still try to paint the image.
+    }
+    target.style.backgroundImage = `url(${imageUrl})`;
+    section?.classList.add('bg-ready');
+  }
+
+  private waitForBrowserIdle() {
+    return new Promise<void>(resolve => {
+      const win = window as Window & {
+        requestIdleCallback?: (callback: () => void, options?: {timeout: number}) => number;
+      };
+      if (typeof win.requestIdleCallback === 'function') {
+        win.requestIdleCallback(() => resolve(), {timeout: 180});
+        return;
+      }
+      window.setTimeout(() => resolve(), 32);
     });
   }
 
@@ -3012,7 +3065,7 @@ ${this.getAiContext()}`,
         this.toast(`${file.name} juda katta (maks: 100MB)`, true);
         continue;
       }
-      loaded.push(await this.readImageAsStoredValue(file, 2400, 0.95));
+      loaded.push(await this.readImageAsStoredValue(file, 1920, 0.84, 'image/webp'));
     }
 
     if (loaded.length === 0) return;
@@ -3103,12 +3156,12 @@ ${this.getAiContext()}`,
     return canvas.toDataURL('image/jpeg', quality);
   }
 
-  private async readImageAsStoredValue(file: File, maxSide = 1600, quality = 0.82) {
-    const blob = await this.readImageAsCompressedBlob(file, maxSide, quality);
+  private async readImageAsStoredValue(file: File, maxSide = 1600, quality = 0.82, mimeType = 'image/jpeg') {
+    const blob = await this.readImageAsCompressedBlob(file, maxSide, quality, mimeType);
     return this.storeMediaBlob(blob, 'image');
   }
 
-  private async readImageAsCompressedBlob(file: Blob, maxSide = 1600, quality = 0.82) {
+  private async readImageAsCompressedBlob(file: Blob, maxSide = 1600, quality = 0.82, mimeType = 'image/jpeg') {
     const source = await this.readFileAsDataUrl(file);
     const image = await new Promise<HTMLImageElement>((resolve, reject) => {
       const img = new Image();
@@ -3127,7 +3180,7 @@ ${this.getAiContext()}`,
     if (!ctx) return file;
     ctx.drawImage(image, 0, 0, width, height);
     return new Promise<Blob>((resolve) => {
-      canvas.toBlob(blob => resolve(blob || file), 'image/jpeg', quality);
+      canvas.toBlob(blob => resolve(blob || file), mimeType, quality);
     });
   }
 
