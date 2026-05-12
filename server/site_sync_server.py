@@ -7,7 +7,7 @@ from urllib.parse import parse_qs, urlparse
 
 PORT = int(os.environ.get("OQQUSH_SYNC_PORT", "3050"))
 BACKUP_PATH = os.environ.get("OQQUSH_BACKUP_PATH", "/var/lib/oqqush/site-backup.json")
-MAX_BODY_BYTES = 140 * 1024 * 1024
+MAX_BODY_BYTES = 512 * 1024 * 1024
 
 
 def build_backup_signature(backup):

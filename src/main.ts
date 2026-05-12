@@ -3328,13 +3328,29 @@ ${this.getAiContext()}`,
   }
 
   private saveLocalJson(key: string, value: unknown) {
+    return this.saveLocalValue(key, JSON.stringify(value));
+  }
+
+  private markLocalSiteDirty() {
+    localStorage.setItem('oqqush_last_local_change_at', String(Date.now()));
+  }
+
+  private hasUnsyncedLocalSiteChanges() {
+    const changedAt = Number(localStorage.getItem('oqqush_last_local_change_at') || '0');
+    const syncedAt = Number(localStorage.getItem('oqqush_last_local_sync_at') || '0');
+    return changedAt > syncedAt;
+  }
+
+  private saveLocalValue(key: string, value: string | null) {
     try {
-      localStorage.setItem(key, JSON.stringify(value));
+      if (value === null || value === undefined) localStorage.removeItem(key);
+      else localStorage.setItem(key, value);
+      this.markLocalSiteDirty();
       this.queueServerSiteSync();
       return true;
     } catch (error) {
       console.error(`${key} save error:`, error);
-      this.toast('Ma\'lumot hajmi katta. Rasm siqildi, qayta saqlab ko\'ring yoki kamroq rasm yuklang.', true);
+      this.toast('Ma\'lumot hajmi katta. Rasm yoki videoni kichraytirib qayta urinib ko\'ring.', true);
       return false;
     }
   }
@@ -3389,11 +3405,11 @@ ${this.getAiContext()}`,
 
   private async writeMediaBackup(media: Record<string, string>) {
     const entries = Object.entries(media || {});
-    if (!entries.length) return;
     const db = await this.openMediaDb();
     await new Promise<void>((resolve, reject) => {
       const tx = db.transaction('files', 'readwrite');
       const store = tx.objectStore('files');
+      store.clear();
       entries.forEach(([key, value]) => {
         if (typeof value === 'string' && value.startsWith('data:')) store.put(this.dataUrlToBlob(value), key);
       });
@@ -3471,6 +3487,9 @@ ${this.getAiContext()}`,
     } catch (error) {
       console.error('Server sync error:', error);
       this.toast('Serverga sinxronlashda xatolik', true);
+      window.setTimeout(() => {
+        if (this.hasUnsyncedLocalSiteChanges()) this.queueServerSiteSync(1200);
+      }, 1200);
     } finally {
       this.siteSyncInFlight = false;
     }
@@ -3491,6 +3510,7 @@ ${this.getAiContext()}`,
         else localStorage.setItem(key, value);
       });
       await this.writeMediaBackup(backup.media || {});
+      localStorage.setItem('oqqush_last_local_sync_at', String(Date.now()));
       this.toast('Ma\'lumotlar import qilindi. Sahifa yangilanmoqda...');
       window.setTimeout(() => window.location.reload(), 800);
     } catch (error) {
@@ -3507,6 +3527,7 @@ ${this.getAiContext()}`,
     }
     if (this.siteSyncImportInFlight) return;
     if (this.siteSyncInFlight || this.siteSyncTimer) return;
+    if (this.hasUnsyncedLocalSiteChanges()) return;
 
     this.siteSyncImportInFlight = true;
     try {
@@ -3546,6 +3567,7 @@ ${this.getAiContext()}`,
       });
       await this.writeMediaBackup(backup.media || {});
       localStorage.setItem(markerKey, seedVersion);
+      localStorage.setItem('oqqush_last_local_sync_at', String(Date.now()));
       this.loadData();
       this.render();
       this.initSlideshows();
@@ -3581,6 +3603,7 @@ ${this.getAiContext()}`,
 
   private async checkServerSiteBackupFreshness(force = false) {
     if (this.siteSyncInFlight || this.siteSyncImportInFlight || this.siteSyncTimer) return;
+    if (!force && this.hasUnsyncedLocalSiteChanges()) return;
     const now = Date.now();
     if (!force && now - this.lastServerSyncCheck < 2500) return;
     this.lastServerSyncCheck = now;
@@ -3899,7 +3922,7 @@ ${this.getAiContext()}`,
       if (oldP !== this.adminPass) return this.toast('Eski parol noto\'g\'ri', true);
       if (newP !== confP) return this.toast('Yangi parollar mos emas', true);
       this.adminPass = newP;
-      localStorage.setItem('admin_pass', newP);
+      if (!this.saveLocalValue('admin_pass', newP)) return;
       (document.getElementById('old-pass') as HTMLInputElement).value = '';
       (document.getElementById('new-pass') as HTMLInputElement).value = '';
       (document.getElementById('conf-pass') as HTMLInputElement).value = '';
@@ -3913,7 +3936,7 @@ ${this.getAiContext()}`,
       s2: (document.getElementById('set-s2') as HTMLInputElement).value,
       s3: (document.getElementById('set-s3') as HTMLInputElement).value,
     };
-    localStorage.setItem('oqqush_settings', JSON.stringify(this.settings));
+    if (!this.saveLocalJson('oqqush_settings', this.settings)) return;
     this.invalidateAiContext();
     this.render();
     this.toast('Sozlamalar yangilandi');
@@ -3966,10 +3989,7 @@ ${this.getAiContext()}`,
       this.projects.push({ id: Date.now().toString(), name, image: img, mediaType, location: loc, year });
     }
 
-    try {
-      localStorage.setItem('oqqush_projects', JSON.stringify(this.projects));
-    } catch (error) {
-      console.error('Project save error:', error);
+    if (!this.saveLocalJson('oqqush_projects', this.projects)) {
       return this.toast('Fayl hajmi katta. Kichikroq video yuklang.', true);
     }
     this.invalidateAiContext();
@@ -4018,7 +4038,7 @@ ${this.getAiContext()}`,
       const project = this.projects.find(p => p.id === id);
       if (project?.image?.startsWith('idb:')) await this.deleteMediaBlob(project.image);
       this.projects = this.projects.filter(p => p.id !== id);
-      localStorage.setItem('oqqush_projects', JSON.stringify(this.projects));
+      if (!this.saveLocalJson('oqqush_projects', this.projects)) return;
       this.invalidateAiContext();
       this.render();
       this.renderAdminProjectsList();
