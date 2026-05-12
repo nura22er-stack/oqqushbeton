@@ -860,6 +860,20 @@ class App {
     return map;
   }
 
+  private buildAssistantRolePrompt(userInput: string) {
+    const sections = this.extractSiteAiData();
+    const keywordMap = this.buildLiveKeywordMap(sections);
+    const panelKeywords = Array.from(new Set(Object.keys(keywordMap)))
+      .filter(keyword => keyword.length > 2)
+      .sort((a, b) => a.localeCompare(b))
+      .join(', ');
+
+    return `Sizning vazifangiz quyidagi kalit so'zlar doirasida javob berish: ${panelKeywords}.
+Agar foydalanuvchi savoli ushbu mavzulardan tashqarida bo'lsa, uni Oqqush Beton saytidagi eng yaqin mavjud bo'lim yoki panel bilan bog'lashga urinib ko'ring, ammo noto'g'ri ma'lumot o'ylab topmang.
+Agar bog'lab bo'lmasa, "Bu ma'lumot Oqqush Beton ma'lumotlarida ko'rsatilmagan" deb javob bering.
+Foydalanuvchi: ${userInput}`;
+  }
+
   private buildSiteAiPrompt(sections: SiteAiSection[]) {
     const keywordMap = this.buildLiveKeywordMap(sections);
     const keywordList = Object.entries(keywordMap)
@@ -2476,6 +2490,7 @@ ${body}`,
           topP: 0.1,
           maxOutputTokens: 190,
           systemInstruction: `Siz Oqqush Beton kompaniyasining yordamchisisiz.
+${this.buildAssistantRolePrompt(text)}
 Mijoz bilan kompaniya nomidan gaplashing. "Saytda bor" demang; "Oqqush Beton kompaniyasida bor", "bizda mavjud", "kompaniyamiz taklif qiladi" kabi ifodalardan foydalaning.
 Mahsulotlar, texnikalar, xizmatlar, loyihalar va laboratoriya bo'limlariga to'liq kirishingiz bor: ular quyidagi JSON katalogda berilgan.
 Faqat quyidagi kompaniya/sayt kontekstidagi ma'lumotlardan foydalaning. Har bir javob matn va JSON ma'lumotlariga sodiq bo'lsin.
