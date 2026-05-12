@@ -200,6 +200,7 @@ class App {
     this.initAnimations();
     this.render();
     this.migrateStoredImages();
+    void this.importBundledSiteBackupIfNeeded();
     setTimeout(() => this.getAiContext('full'), 300);
   }
 
@@ -3251,6 +3252,36 @@ ${this.getAiContext()}`,
     } catch (error) {
       console.error('Backup import error:', error);
       this.toast('Backup import qilishda xatolik', true);
+    }
+  }
+
+  private async importBundledSiteBackupIfNeeded() {
+    const isLiveSite = window.location.hostname === 'oqqushbeton.duckdns.org';
+    if (!isLiveSite) return;
+
+    try {
+      const response = await fetch('/site-backup.json', {cache: 'no-store'});
+      if (!response.ok) return;
+
+      const backup = await response.json() as {
+        version?: number;
+        exportedAt?: string;
+        localStorage?: Record<string, string | null>;
+        media?: Record<string, string>;
+      };
+      const seedVersion = backup.exportedAt || String(backup.version || 1);
+      const markerKey = 'oqqush_bundled_backup_version';
+      if (!backup.localStorage || localStorage.getItem(markerKey) === seedVersion) return;
+
+      Object.entries(backup.localStorage).forEach(([key, value]) => {
+        if (value === null || value === undefined) localStorage.removeItem(key);
+        else localStorage.setItem(key, value);
+      });
+      await this.writeMediaBackup(backup.media || {});
+      localStorage.setItem(markerKey, seedVersion);
+      window.location.reload();
+    } catch (error) {
+      console.error('Bundled backup import error:', error);
     }
   }
 
