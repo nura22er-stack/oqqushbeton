@@ -302,13 +302,13 @@ export class VoiceAiAssistant {
 
     try {
       this.outputContext = new AudioContext({sampleRate: OUTPUT_SAMPLE_RATE, latencyHint: 'interactive'});
-      this.inputContext = new AudioContext({sampleRate: INPUT_SAMPLE_RATE, latencyHint: 'interactive'});
+      this.inputContext = new AudioContext({latencyHint: 'interactive'});
       await Promise.all([this.outputContext.resume(), this.inputContext.resume()]);
 
       if (!this.isActive || startId !== this.startId) return;
-      this.connectSocket(startId);
       this.microphonePromise = this.prepareMicrophone(startId);
       this.startBrowserRecognition();
+      this.connectSocket(startId);
     } catch (error) {
       if (!this.isActive || startId !== this.startId) return;
       console.error('Gemini Live start error:', error);
@@ -626,16 +626,7 @@ export class VoiceAiAssistant {
 
   private async prepareMicrophone(startId: number) {
     try {
-      this.mediaStream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: false,
-          channelCount: 1,
-          sampleRate: INPUT_SAMPLE_RATE,
-          sampleSize: 16,
-        },
-      });
+      this.mediaStream = await this.requestMicrophoneStream();
 
       if (!this.isActive || startId !== this.startId) {
         this.mediaStream.getTracks().forEach(track => track.stop());
@@ -645,6 +636,24 @@ export class VoiceAiAssistant {
       if (!this.isActive || startId !== this.startId) return;
       console.error('Gemini Live microphone error:', error);
       this.showError(error instanceof Error ? this.limit(error.message) : 'Mikrofon ruxsatida xatolik.');
+    }
+  }
+
+  private async requestMicrophoneStream() {
+    const preferred: MediaStreamConstraints = {
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+        channelCount: 1,
+      },
+    };
+
+    try {
+      return await navigator.mediaDevices.getUserMedia(preferred);
+    } catch (error) {
+      console.warn('Preferred microphone constraints failed, retrying with basic audio:', error);
+      return navigator.mediaDevices.getUserMedia({audio: true});
     }
   }
 

@@ -3,6 +3,7 @@ import json
 import os
 import tempfile
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from urllib.parse import parse_qs, urlparse
 
 PORT = int(os.environ.get("OQQUSH_SYNC_PORT", "3050"))
 BACKUP_PATH = os.environ.get("OQQUSH_BACKUP_PATH", "/var/www/oqqush-beton/site-backup.json")
@@ -32,10 +33,22 @@ class SiteSyncHandler(BaseHTTPRequestHandler):
         self.wfile.write(data)
 
     def do_GET(self):
-        if self.path != "/api/site-backup":
+        parsed = urlparse(self.path)
+        if parsed.path != "/api/site-backup":
             self.send_json(404, {"ok": False, "error": "Not found"})
             return
         try:
+            query = parse_qs(parsed.query)
+            if query.get("meta") == ["1"]:
+                with open(BACKUP_PATH, "r", encoding="utf-8") as file:
+                    backup = json.load(file)
+                self.send_json(200, {
+                    "ok": True,
+                    "version": backup.get("version"),
+                    "exportedAt": backup.get("exportedAt"),
+                })
+                return
+
             with open(BACKUP_PATH, "rb") as file:
                 data = file.read()
             self.send_response(200)

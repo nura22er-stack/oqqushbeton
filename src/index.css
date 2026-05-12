@@ -269,6 +269,8 @@
   .slide-div {
     background-size: cover;
     background-position: center center;
+    transition-duration: 0ms;
+    filter: brightness(0.62) contrast(1.04) saturate(1.02);
   }
 
   #home .slide-div {
@@ -385,6 +387,21 @@
 
   #services-image-grid .glass-card {
     min-height: clamp(280px, 72vw, 380px) !important;
+  }
+
+  .reveal,
+  .reveal-stagger > * {
+    transition-duration: 220ms !important;
+    transform: none !important;
+  }
+
+  .glass-card,
+  .slide-div,
+  #products-list-grid .size-full,
+  #transport-grid .size-full,
+  #projects-grid video,
+  #projects-grid .size-full {
+    will-change: auto !important;
   }
 
   #products-list-grid > *,

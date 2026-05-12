@@ -195,6 +195,7 @@ class App {
   private siteSyncTimer: number | null = null;
   private siteSyncInFlight = false;
   private siteSyncReady = false;
+  private slideshowTimers: number[] = [];
 
   constructor() {
     this.loadData();
@@ -203,7 +204,8 @@ class App {
     this.initAnimations();
     this.render();
     this.migrateStoredImages();
-    void this.importBundledSiteBackupIfNeeded();
+    const syncDelay = this.isMobileViewport() ? 4500 : 600;
+    window.setTimeout(() => void this.importBundledSiteBackupIfNeeded(), syncDelay);
     setTimeout(() => this.getAiContext('full'), 300);
   }
 
@@ -2404,8 +2406,13 @@ ${body}`,
     this.closeMobileMenu();
     this.closeAiChat();
     const top = section.getBoundingClientRect().top + window.scrollY - 72;
-    window.scrollTo({top: Math.max(0, top), behavior});
+    const finalBehavior = this.isMobileViewport() ? 'auto' : behavior;
+    window.scrollTo({top: Math.max(0, top), behavior: finalBehavior});
     if (showToast) this.toast(`${label} ochildi`);
+  }
+
+  private isMobileViewport() {
+    return window.matchMedia('(max-width: 767px)').matches;
   }
 
   private openAdminTarget(tab: string | undefined, label: string) {
@@ -2704,15 +2711,30 @@ ${this.getAiContext()}`,
   }
 
   private initSlideshows() {
+    this.slideshowTimers.forEach(timer => window.clearInterval(timer));
+    this.slideshowTimers = [];
+    const isMobile = this.isMobileViewport();
     const sections = document.querySelectorAll('.slideshow-section');
     sections.forEach(sec => {
       const group = (sec as HTMLElement).dataset.group;
       if (!group || !this.slideImages[group]) return;
       
-      const images = this.slideImages[group].map(img => this.formatImg(img, 2400)).filter(Boolean);
+      const imageWidth = isMobile ? 1200 : 2400;
+      const images = this.slideImages[group].map(img => this.formatImg(img, imageWidth)).filter(Boolean);
       const container = sec.querySelector('.slide-container');
       if (!container || images.length === 0) return;
       container.innerHTML = '';
+      if (isMobile) {
+        const div = document.createElement('div');
+        div.className = 'slide-div opacity-100';
+        div.style.backgroundImage = `url(${images[0]})`;
+        const overlay = document.createElement('div');
+        overlay.className = 'absolute inset-0 z-[1] bg-black/25';
+        container.appendChild(div);
+        container.appendChild(overlay);
+        this.hydrateProjectMediaElements(container);
+        return;
+      }
       if (images.length === 1) images.push(images[0]);
       
       const div1 = document.createElement('div');
@@ -2735,7 +2757,7 @@ ${this.getAiContext()}`,
       let activeDiv = div1;
       let nextDiv = div2;
 
-      setInterval(() => {
+      const timer = window.setInterval(() => {
         current = (current + 1) % images.length;
         const nextImg = images[(current + 1) % images.length];
         
@@ -2750,6 +2772,7 @@ ${this.getAiContext()}`,
            [activeDiv, nextDiv] = [nextDiv, activeDiv];
         }, 1500);
       }, 6000);
+      this.slideshowTimers.push(timer);
     });
   }
 
@@ -3308,7 +3331,14 @@ ${this.getAiContext()}`,
     }
 
     try {
-      const response = await fetch('/site-backup.json', {cache: 'no-store'});
+      const markerKey = 'oqqush_bundled_backup_version';
+      const metaResponse = await fetch('/api/site-backup?meta=1', {cache: 'no-store'});
+      if (metaResponse.ok) {
+        const meta = await metaResponse.json() as {exportedAt?: string};
+        if (meta.exportedAt && localStorage.getItem(markerKey) === meta.exportedAt) return;
+      }
+
+      const response = await fetch('/api/site-backup', {cache: 'no-store'});
       if (!response.ok) return;
 
       const backup = await response.json() as {
@@ -3318,7 +3348,6 @@ ${this.getAiContext()}`,
         media?: Record<string, string>;
       };
       const seedVersion = backup.exportedAt || String(backup.version || 1);
-      const markerKey = 'oqqush_bundled_backup_version';
       if (!backup.localStorage || localStorage.getItem(markerKey) === seedVersion) return;
 
       Object.entries(backup.localStorage).forEach(([key, value]) => {
