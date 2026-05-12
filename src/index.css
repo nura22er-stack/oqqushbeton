@@ -171,3 +171,418 @@
 .animate-bounce-subtle {
   animation: bounce-subtle 3s infinite ease-in-out;
 }
+
+@media (max-width: 1024px) {
+  .font-heading {
+    letter-spacing: 0.08em;
+  }
+
+  #navbar .max-w-7xl {
+    gap: 0.75rem;
+  }
+
+  #panel-viewer-card {
+    max-width: min(94vw, 760px);
+  }
+
+  #panel-viewer-media {
+    min-height: clamp(220px, 45vh, 420px);
+  }
+
+  #projects-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 767px) {
+  html,
+  body,
+  #app {
+    max-width: 100%;
+    overflow-x: clip;
+  }
+
+  img,
+  video {
+    max-width: 100%;
+  }
+
+  .font-heading {
+    letter-spacing: 0.055em;
+    overflow-wrap: anywhere;
+    word-break: normal;
+  }
+
+  .btn-primary,
+  .btn-outline {
+    width: 100%;
+    min-height: 44px;
+    padding-inline: 1rem;
+    letter-spacing: 0.12em;
+    white-space: normal;
+    text-align: center;
+  }
+
+  #navbar {
+    padding-block: 0.65rem;
+  }
+
+  #navbar .max-w-7xl {
+    padding-inline: 0.75rem;
+  }
+
+  #navbar img {
+    height: 2.1rem;
+  }
+
+  #nav-logo-l1,
+  #nav-logo-l2 {
+    font-size: 0.95rem !important;
+    letter-spacing: 0.1em;
+  }
+
+  #admin-trigger {
+    padding-inline: 0.75rem !important;
+    font-size: 0.56rem !important;
+  }
+
+  .mobile-nav-link {
+    font-size: clamp(1.35rem, 7vw, 2.1rem);
+    letter-spacing: 0.08em;
+    text-align: center;
+    line-height: 1.05;
+  }
+
+  #mobile-menu {
+    gap: 1.35rem;
+    padding: 5rem 1.25rem 2rem;
+    justify-content: flex-start;
+    overflow-y: auto;
+  }
+
+  #home,
+  #about,
+  #services,
+  #transport,
+  #products-section,
+  #laboratory,
+  #projects {
+    min-height: auto;
+    padding: 5.5rem 1rem 4.5rem;
+  }
+
+  #home {
+    min-height: 100svh;
+    padding-top: 6.5rem;
+  }
+
+  #home .relative.group.p-8 {
+    padding: 1.25rem;
+    border-radius: 1.25rem;
+  }
+
+  #home .relative.group.p-8 img {
+    height: clamp(5.5rem, 28vw, 8rem);
+  }
+
+  #hero-title {
+    font-size: clamp(2.45rem, 14vw, 4.25rem) !important;
+    line-height: 0.95 !important;
+    letter-spacing: 0.06em !important;
+    margin-bottom: 1.25rem;
+  }
+
+  #hero-subtitle {
+    font-size: clamp(0.95rem, 4vw, 1.1rem) !important;
+    letter-spacing: 0.08em;
+    margin-bottom: 2rem;
+  }
+
+  section h2,
+  footer h2 {
+    font-size: clamp(2rem, 11vw, 3.5rem) !important;
+    letter-spacing: 0.08em !important;
+    margin-bottom: 2.5rem !important;
+    text-align: left !important;
+  }
+
+  section h3 {
+    font-size: clamp(2rem, 11vw, 3.5rem) !important;
+    line-height: 0.98 !important;
+    letter-spacing: 0.04em !important;
+    text-align: left !important;
+  }
+
+  .glass-card,
+  #about .glass-card {
+    padding: 1.35rem !important;
+    border-radius: 1rem;
+  }
+
+  #about p,
+  #services p,
+  #transport p,
+  #products-section p {
+    font-size: 0.95rem !important;
+    line-height: 1.7 !important;
+    letter-spacing: 0.02em;
+  }
+
+  #about .space-y-12,
+  #services .space-y-6,
+  #transport .space-y-8 {
+    gap: 1.25rem;
+  }
+
+  section.bg-\[\#111\] {
+    padding-block: 3rem;
+  }
+
+  #stat1-val,
+  #stat2-val,
+  #stat3-val {
+    font-size: clamp(2.75rem, 15vw, 4.2rem) !important;
+    letter-spacing: 0.02em;
+  }
+
+  #services .grid,
+  #transport .grid {
+    gap: 2rem;
+    margin-bottom: 3rem;
+  }
+
+  #services-image-grid,
+  #transport-grid,
+  #products-list-grid,
+  #projects-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+  }
+
+  #services-image-grid .glass-card {
+    min-height: clamp(280px, 72vw, 380px) !important;
+  }
+
+  #products-list-grid > *,
+  #transport-grid > * {
+    padding: 1.1rem !important;
+    border-radius: 1.1rem !important;
+  }
+
+  #products-list-grid h3,
+  #transport-grid h4 {
+    font-size: 1.25rem !important;
+    letter-spacing: 0.08em !important;
+  }
+
+  #concrete-mix,
+  #high-performance-concrete {
+    padding: 4.5rem 1rem !important;
+  }
+
+  #concrete-mix .grid,
+  #high-performance-concrete .grid {
+    gap: 1rem !important;
+  }
+
+  #plitalar-section,
+  #gisht-section {
+    min-height: auto !important;
+    margin-top: 2rem !important;
+  }
+
+  #plitalar-section .glass,
+  #gisht-section .glass {
+    padding: 1rem !important;
+  }
+
+  #product-section-plitalar-title,
+  #product-section-gisht-title {
+    font-size: clamp(2rem, 11vw, 3.5rem) !important;
+    line-height: 0.95 !important;
+  }
+
+  #laboratory .reveal-stagger {
+    gap: 1rem !important;
+  }
+
+  #laboratory .reveal-stagger > .glass {
+    min-height: 280px !important;
+    padding: 1.25rem !important;
+  }
+
+  #footer {
+    padding: 4.5rem 1rem 6rem !important;
+  }
+
+  #footer .max-w-7xl {
+    gap: 2.5rem !important;
+  }
+
+  #panel-viewer-modal {
+    align-items: flex-end;
+    padding: 0.75rem !important;
+  }
+
+  #panel-viewer-card {
+    max-width: 100%;
+    max-height: 92svh;
+    border-radius: 1.1rem;
+  }
+
+  #panel-viewer-card > .grid {
+    max-height: 92svh !important;
+  }
+
+  #panel-viewer-media {
+    min-height: clamp(220px, 52vw, 320px) !important;
+  }
+
+  #panel-viewer-card h3 {
+    font-size: clamp(1.65rem, 8vw, 2.5rem) !important;
+  }
+
+  #panel-viewer-desc {
+    font-size: 0.78rem !important;
+    letter-spacing: 0.1em;
+  }
+
+  #panel-viewer-prev,
+  #panel-viewer-next {
+    top: auto;
+    bottom: 1rem;
+    transform: none;
+  }
+
+  #panel-viewer-prev {
+    left: 1rem;
+  }
+
+  #panel-viewer-next {
+    right: 1rem;
+  }
+
+  #content-modal {
+    padding: 0.75rem !important;
+  }
+
+  #content-modal .glass,
+  #admin-modal .glass {
+    padding: 1.35rem !important;
+    max-height: 92svh;
+  }
+
+  #admin-sidebar {
+    width: 100vw;
+    max-width: 100vw;
+  }
+
+  #admin-sidebar > .p-8 {
+    padding: 1rem !important;
+  }
+
+  #admin-sidebar h2 {
+    font-size: 1.05rem !important;
+    letter-spacing: 0.08em;
+  }
+
+  #admin-tabs-content {
+    padding: 1rem !important;
+  }
+
+  .admin-nav-btn {
+    min-width: 86px;
+    padding: 0.7rem 0.65rem;
+  }
+
+  .admin-card-item {
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .admin-card-item,
+  #tab-services .flex,
+  #tab-transport .flex,
+  #tab-laboratory .flex,
+  #prod-form .flex,
+  #p-form .flex,
+  #content-modal .flex {
+    flex-wrap: wrap;
+  }
+
+  .admin-input {
+    padding: 0.85rem;
+    font-size: 16px;
+  }
+
+  #toast-container {
+    inset-inline: 1rem !important;
+    right: 1rem !important;
+    bottom: 1rem !important;
+  }
+
+  .toast {
+    width: 100%;
+    padding: 1rem;
+    font-size: 0.75rem;
+  }
+
+  #ai-container {
+    right: 0.75rem;
+    bottom: 0.75rem;
+    left: 0.75rem;
+    max-width: none;
+    gap: 0.75rem;
+  }
+
+  #ai-chat-panel,
+  #ai-status-box {
+    width: 100%;
+    max-height: min(72svh, 560px);
+  }
+
+  #ai-chat-messages {
+    max-height: 42svh;
+    min-height: 220px;
+  }
+
+  #ai-chat-btn {
+    width: 3.6rem;
+    height: 3.6rem;
+  }
+
+  #ai-assistant-btn {
+    width: 4.35rem;
+    height: 4.35rem;
+  }
+
+  #ai-assistant-btn .relative.z-10 {
+    width: 2.85rem;
+    height: 2.85rem;
+  }
+}
+
+@media (max-width: 420px) {
+  #nav-logo-l1,
+  #nav-logo-l2 {
+    font-size: 0.8rem !important;
+    letter-spacing: 0.08em;
+  }
+
+  #admin-trigger {
+    display: none;
+  }
+
+  #hero-title {
+    font-size: clamp(2.1rem, 16vw, 3.4rem) !important;
+  }
+
+  .mobile-nav-link {
+    font-size: clamp(1.15rem, 7vw, 1.7rem);
+  }
+
+  #ai-chat-panel,
+  #ai-status-box {
+    max-height: 76svh;
+  }
+}
