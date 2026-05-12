@@ -3348,7 +3348,11 @@ ${this.getAiContext()}`,
       if (metaResponse.ok) {
         const meta = await metaResponse.json() as {exportedAt?: string; signature?: string};
         const metaVersion = meta.signature || meta.exportedAt;
-        if (metaVersion && localStorage.getItem(markerKey) === metaVersion) return;
+        if (
+          metaVersion &&
+          localStorage.getItem(markerKey) === metaVersion &&
+          this.localStorageMatchesServerSignature(meta.signature)
+        ) return;
       }
 
       const response = await fetch('/api/site-backup', {cache: 'no-store'});
@@ -3361,7 +3365,13 @@ ${this.getAiContext()}`,
         media?: Record<string, string>;
       };
       const seedVersion = this.getBackupVersionMarker(backup);
-      if (!backup.localStorage || localStorage.getItem(markerKey) === seedVersion) return;
+      if (
+        !backup.localStorage ||
+        (
+          localStorage.getItem(markerKey) === seedVersion &&
+          this.localStorageMatchesServerSignature(seedVersion)
+        )
+      ) return;
 
       Object.entries(backup.localStorage).forEach(([key, value]) => {
         if (value === null || value === undefined) localStorage.removeItem(key);
@@ -3412,7 +3422,13 @@ ${this.getAiContext()}`,
       if (!response.ok) return;
       const meta = await response.json() as {exportedAt?: string; signature?: string};
       const version = meta.signature || meta.exportedAt;
-      if (version && localStorage.getItem('oqqush_bundled_backup_version') !== version) {
+      if (
+        version &&
+        (
+          localStorage.getItem('oqqush_bundled_backup_version') !== version ||
+          !this.localStorageMatchesServerSignature(meta.signature)
+        )
+      ) {
         await this.importBundledSiteBackupIfNeeded();
       }
     } catch (error) {
@@ -3433,6 +3449,15 @@ ${this.getAiContext()}`,
       String((localStorageData.oqqush_slideshows || '').length),
       String(Object.keys(backup.media || {}).length),
     ].join(':');
+  }
+
+  private localStorageMatchesServerSignature(signature?: string) {
+    if (!signature) return true;
+    const parts = signature.split(':');
+    if (parts.length < 3) return true;
+    const expectedSlidesLength = Number(parts[parts.length - 2]);
+    if (!Number.isFinite(expectedSlidesLength)) return true;
+    return (localStorage.getItem('oqqush_slideshows') || '').length === expectedSlidesLength;
   }
 
   private async getMediaBlobUrl(key: string) {
