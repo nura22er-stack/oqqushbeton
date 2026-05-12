@@ -444,6 +444,14 @@ class App {
     document.getElementById('panel-viewer-next')?.addEventListener('click', () => this.movePanelViewer(1));
     document.getElementById('save-hero-btn')?.addEventListener('click', () => this.saveSettings());
     document.getElementById('save-settings-btn')?.addEventListener('click', () => this.saveSettings());
+    document.getElementById('export-site-data-btn')?.addEventListener('click', () => void this.exportSiteDataBackup());
+    document.getElementById('import-site-data-btn')?.addEventListener('click', () => document.getElementById('site-backup-input')?.click());
+    document.getElementById('site-backup-input')?.addEventListener('change', event => {
+      const input = event.currentTarget as HTMLInputElement;
+      const file = input.files?.[0];
+      if (file) void this.importSiteDataBackup(file);
+      input.value = '';
+    });
     document.getElementById('save-slideshows-btn')?.addEventListener('click', () => this.saveSlideshows());
     document.getElementById('add-service-btn')?.addEventListener('click', () => this.addService());
     document.getElementById('add-lab-btn')?.addEventListener('click', () => this.addLab());
@@ -3151,6 +3159,99 @@ ${this.getAiContext()}`,
     });
     db.close();
     return key;
+  }
+
+  private async readAllMediaBackup() {
+    const db = await this.openMediaDb();
+    const media: Record<string, string> = {};
+    const {keys, values} = await new Promise<{keys: IDBValidKey[]; values: Blob[]}>((resolve, reject) => {
+      const tx = db.transaction('files', 'readonly');
+      const store = tx.objectStore('files');
+      const keysRequest = store.getAllKeys();
+      const valuesRequest = store.getAll();
+      tx.oncomplete = () => resolve({keys: keysRequest.result, values: valuesRequest.result as Blob[]});
+      tx.onerror = () => reject(tx.error);
+    });
+    db.close();
+    await Promise.all(values.map((blob, index) => new Promise<void>(resolve => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        media[String(keys[index])] = String(reader.result || '');
+        resolve();
+      };
+      reader.onerror = () => resolve();
+      reader.readAsDataURL(blob);
+    })));
+    return media;
+  }
+
+  private async writeMediaBackup(media: Record<string, string>) {
+    const entries = Object.entries(media || {});
+    if (!entries.length) return;
+    const db = await this.openMediaDb();
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction('files', 'readwrite');
+      const store = tx.objectStore('files');
+      entries.forEach(([key, value]) => {
+        if (typeof value === 'string' && value.startsWith('data:')) store.put(this.dataUrlToBlob(value), key);
+      });
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+    db.close();
+  }
+
+  private async exportSiteDataBackup() {
+    const keys = [
+      'oqqush_projects',
+      'oqqush_transport',
+      'oqqush_products',
+      'oqqush_product_sections',
+      'oqqush_social',
+      'oqqush_settings',
+      'admin_pass',
+      'oqqush_slideshows',
+      'oqqush_lab',
+      'oqqush_services',
+    ];
+    const localStorageData = Object.fromEntries(keys.map(key => [key, localStorage.getItem(key)]));
+    const backup = {
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      localStorage: localStorageData,
+      media: await this.readAllMediaBackup(),
+    };
+    const blob = new Blob([JSON.stringify(backup)], {type: 'application/json'});
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `oqqush-beton-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+    this.toast('Sayt ma\'lumotlari eksport qilindi');
+  }
+
+  private async importSiteDataBackup(file: File) {
+    try {
+      const backup = JSON.parse(await file.text()) as {
+        localStorage?: Record<string, string | null>;
+        media?: Record<string, string>;
+      };
+      if (!backup.localStorage || typeof backup.localStorage !== 'object') {
+        this.toast('Backup fayl noto\'g\'ri', true);
+        return;
+      }
+      Object.entries(backup.localStorage).forEach(([key, value]) => {
+        if (value === null || value === undefined) localStorage.removeItem(key);
+        else localStorage.setItem(key, value);
+      });
+      await this.writeMediaBackup(backup.media || {});
+      this.toast('Ma\'lumotlar import qilindi. Sahifa yangilanmoqda...');
+      window.setTimeout(() => window.location.reload(), 800);
+    } catch (error) {
+      console.error('Backup import error:', error);
+      this.toast('Backup import qilishda xatolik', true);
+    }
   }
 
   private async getMediaBlobUrl(key: string) {

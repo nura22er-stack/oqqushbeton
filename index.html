@@ -1064,6 +1064,17 @@
               </div>
               <button id="save-settings-btn" class="btn-primary w-full">SOZLAMALARNI SAQLASH</button>
             </div>
+            <div class="glass p-8 border-t-4 border-t-cyan-400 space-y-5">
+              <h4 class="text-xl font-heading font-black uppercase text-white">Sayt Ma'lumotlari</h4>
+              <p class="text-[10px] font-bold uppercase tracking-[3px] leading-relaxed text-gray-500">
+                Admin paneldagi matnlar, rasmlar va videolar brauzer xotirasida saqlanadi. Local saytdagi holatni serverga ko'chirish uchun eksport/import qiling.
+              </p>
+              <input type="file" id="site-backup-input" class="hidden" accept="application/json">
+              <div class="grid grid-cols-1 gap-3">
+                <button id="export-site-data-btn" class="btn-outline w-full">MA'LUMOTLARNI EKSPORT QILISH</button>
+                <button id="import-site-data-btn" class="btn-primary w-full">MA'LUMOTLARNI IMPORT QILISH</button>
+              </div>
+            </div>
           </div>
         </div>
       </aside>
