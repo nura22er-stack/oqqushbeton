@@ -1535,6 +1535,12 @@ Foydalanuvchi: ${userInput}`;
     this.livePresentationCloseTimer = null;
 
     const key = `${target.collection}-${target.index}`;
+    if (
+      source === 'user' &&
+      (this.liveReadingMode || this.singlePanelCloseFallbackTimer !== null) &&
+      this.livePresentationKey &&
+      this.livePresentationKey !== key
+    ) return;
     if (this.livePresentationKey === key && this.panelViewerOpen) return;
     this.livePresentationKey = key;
     this.liveOpenedPanel = true;

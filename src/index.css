@@ -9,6 +9,8 @@
 @layer base {
   html {
     scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
   }
   body {
     @apply bg-[#0a0a0a] text-white font-sans antialiased overflow-x-hidden;
@@ -54,6 +56,20 @@
   .slide-container {
     @apply absolute inset-0 z-0 overflow-hidden;
     background-color: #0b0b0f;
+    isolation: isolate;
+  }
+
+  .slide-container::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background:
+      radial-gradient(circle at 50% 30%, rgba(255,255,255,0.08), transparent 45%),
+      linear-gradient(180deg, rgba(18,18,24,0.72), rgba(10,10,14,0.92));
+    filter: blur(18px);
+    transform: scale(1.04);
+    transition: opacity 220ms ease;
   }
 
   .slide-div {
@@ -75,6 +91,10 @@
 
   .slideshow-section.bg-ready .slide-div {
     opacity: 1;
+  }
+
+  .slideshow-section.bg-ready .slide-container::before {
+    opacity: 0;
   }
 
   .admin-scroll::-webkit-scrollbar {
@@ -221,6 +241,16 @@
 }
 
 @media (max-width: 767px) {
+  .slideshow-section {
+    min-height: max(32rem, 100svh);
+  }
+
+  @supports (height: 100dvh) {
+    .slideshow-section {
+      min-height: max(32rem, 100dvh);
+    }
+  }
+
   .slideshow-section {
     content-visibility: auto;
     contain-intrinsic-size: 720px;
