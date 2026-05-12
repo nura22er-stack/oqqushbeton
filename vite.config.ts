@@ -10,7 +10,7 @@ export default defineConfig(({mode}) => {
     define: {
       'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY || ''),
       'process.env.GEMINI_CHAT_MODEL': JSON.stringify(env.GEMINI_CHAT_MODEL || 'gemini-2.5-flash'),
-      'process.env.GEMINI_LIVE_MODEL': JSON.stringify(env.GEMINI_LIVE_MODEL || 'gemini-2.5-flash-preview-native-audio-dialog'),
+      'process.env.GEMINI_LIVE_MODEL': JSON.stringify(env.GEMINI_LIVE_MODEL || 'gemini-2.5-flash-live-preview'),
     },
     resolve: {
       alias: {

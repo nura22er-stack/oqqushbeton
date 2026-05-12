@@ -32,10 +32,17 @@ declare const process: {
 };
 
 const LIVE_ENDPOINT = 'wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent';
-const DEFAULT_MODEL = 'gemini-2.5-flash-preview-native-audio-dialog';
+const DEFAULT_MODEL = 'gemini-2.5-flash-live-preview';
 const FALLBACK_MODELS = [
-  'gemini-2.5-flash-preview-native-audio-dialog',
+  'gemini-2.5-flash-live-preview',
 ];
+
+const LIVE_MODEL_ALIASES: Record<string, string> = {
+  'gemini-2.5-flash-preview-native-audio-dialog': 'gemini-2.5-flash-live-preview',
+  'gemini-2.5-flash-native-audio-preview-12-2025': 'gemini-2.5-flash-live-preview',
+  'gemini-2.5-flash-native-audio-preview-09-2025': 'gemini-2.5-flash-live-preview',
+  'gemini-live-2.5-flash-preview': 'gemini-2.5-flash-live-preview',
+};
 const INPUT_SAMPLE_RATE = 16000;
 const OUTPUT_SAMPLE_RATE = 24000;
 const INPUT_BUFFER_SIZE = 1024;
@@ -305,6 +312,7 @@ export class VoiceAiAssistant {
 
       if (!this.isActive || startId !== this.startId) return;
       this.microphonePromise = this.prepareMicrophone(startId);
+      this.sendLocalGreeting();
       this.connectSocket(startId);
     } catch (error) {
       if (!this.isActive || startId !== this.startId) return;
@@ -880,7 +888,8 @@ export class VoiceAiAssistant {
   }
 
   private cleanModelName(model: string) {
-    return model.replace(/^models\//, '').trim();
+    const cleaned = model.replace(/^models\//, '').trim();
+    return LIVE_MODEL_ALIASES[cleaned] || cleaned || DEFAULT_MODEL;
   }
 
   private modelPath() {
