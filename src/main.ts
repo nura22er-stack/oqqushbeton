@@ -192,6 +192,9 @@ class App {
   private lastLiveSectionKey = '';
   private lastLiveKeywordAction = '';
   private lastLiveKeywordActionAt = 0;
+  private siteSyncTimer: number | null = null;
+  private siteSyncInFlight = false;
+  private siteSyncReady = false;
 
   constructor() {
     this.loadData();
@@ -3132,6 +3135,7 @@ ${this.getAiContext()}`,
   private saveLocalJson(key: string, value: unknown) {
     try {
       localStorage.setItem(key, JSON.stringify(value));
+      this.queueServerSiteSync();
       return true;
     } catch (error) {
       console.error(`${key} save error:`, error);
@@ -3205,6 +3209,18 @@ ${this.getAiContext()}`,
   }
 
   private async exportSiteDataBackup() {
+    const backup = await this.buildSiteBackup();
+    const blob = new Blob([JSON.stringify(backup)], {type: 'application/json'});
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `oqqush-beton-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+    this.toast('Sayt ma\'lumotlari eksport qilindi');
+  }
+
+  private async buildSiteBackup() {
     const keys = [
       'oqqush_projects',
       'oqqush_transport',
@@ -3218,20 +3234,47 @@ ${this.getAiContext()}`,
       'oqqush_services',
     ];
     const localStorageData = Object.fromEntries(keys.map(key => [key, localStorage.getItem(key)]));
-    const backup = {
-      version: 1,
+    return {
+      version: 2,
       exportedAt: new Date().toISOString(),
       localStorage: localStorageData,
       media: await this.readAllMediaBackup(),
     };
-    const blob = new Blob([JSON.stringify(backup)], {type: 'application/json'});
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `oqqush-beton-backup-${new Date().toISOString().slice(0, 10)}.json`;
-    link.click();
-    URL.revokeObjectURL(url);
-    this.toast('Sayt ma\'lumotlari eksport qilindi');
+  }
+
+  private queueServerSiteSync(delay = 1200) {
+    if (!this.siteSyncReady) return;
+    if (window.location.hostname !== 'oqqushbeton.duckdns.org') return;
+    if (this.siteSyncTimer) window.clearTimeout(this.siteSyncTimer);
+    this.siteSyncTimer = window.setTimeout(() => {
+      this.siteSyncTimer = null;
+      void this.syncSiteBackupToServer();
+    }, delay);
+  }
+
+  private async syncSiteBackupToServer() {
+    if (this.siteSyncInFlight || window.location.hostname !== 'oqqushbeton.duckdns.org') return;
+    this.siteSyncInFlight = true;
+    try {
+      const backup = await this.buildSiteBackup();
+      const response = await fetch('/api/site-backup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Oqqush-Admin-Pass': this.adminPass,
+        },
+        body: JSON.stringify(backup),
+      });
+      if (!response.ok) throw new Error(`Sync status ${response.status}`);
+      const result = await response.json().catch(() => ({})) as {exportedAt?: string};
+      const seedVersion = result.exportedAt || backup.exportedAt || String(backup.version || 2);
+      localStorage.setItem('oqqush_bundled_backup_version', seedVersion);
+    } catch (error) {
+      console.error('Server sync error:', error);
+      this.toast('Serverga sinxronlashda xatolik', true);
+    } finally {
+      this.siteSyncInFlight = false;
+    }
   }
 
   private async importSiteDataBackup(file: File) {
@@ -3259,7 +3302,10 @@ ${this.getAiContext()}`,
 
   private async importBundledSiteBackupIfNeeded() {
     const isLiveSite = window.location.hostname === 'oqqushbeton.duckdns.org';
-    if (!isLiveSite) return;
+    if (!isLiveSite) {
+      this.siteSyncReady = true;
+      return;
+    }
 
     try {
       const response = await fetch('/site-backup.json', {cache: 'no-store'});
@@ -3284,6 +3330,8 @@ ${this.getAiContext()}`,
       window.location.reload();
     } catch (error) {
       console.error('Bundled backup import error:', error);
+    } finally {
+      this.siteSyncReady = true;
     }
   }
 
