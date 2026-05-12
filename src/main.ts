@@ -633,7 +633,9 @@ class App {
         this.liveAssistantTextWindow = '';
         if (this.panelViewerOpen) this.closePanelViewer();
       }
+      const wasActive = this.voiceAi.active;
       this.voiceAi.toggle(this.getAiContext('live'));
+      if (wasActive) this.resetLiveButtonUi();
     });
   }
 
@@ -4537,14 +4539,15 @@ ${this.getAiContext()}`,
     let html = items.map(i => {
       const val = (this.social as any)[i.key];
       if (!val) return '';
+      const href = this.normalizeSocialLink(String(val), i.key);
       return `
-        <a href="https://${val}" target="_blank" class="flex items-center gap-4 group">
+        <a href="${this.escapeHtml(href)}" target="_blank" rel="noopener noreferrer" class="flex items-center gap-4 group">
           <div class="size-10 rounded-xl border border-white/10 flex items-center justify-center transition-all group-hover:scale-110" style="background: ${i.color}15; border-color: ${i.color}30">
              ${i.icon}
           </div>
           <div class="flex flex-col">
             <span class="text-[10px] font-black uppercase tracking-[3px] text-white/40 mb-1">${i.name}</span>
-            <span class="text-[12px] font-bold uppercase tracking-[2px] text-white group-hover:text-white/80 transition-colors">${val}</span>
+            <span class="text-[12px] font-bold uppercase tracking-[2px] text-white group-hover:text-white/80 transition-colors">${i.name}</span>
           </div>
         </a>
       `;
@@ -4567,6 +4570,18 @@ ${this.getAiContext()}`,
     }
 
     list.innerHTML = html;
+  }
+
+  private normalizeSocialLink(value: string, key: string) {
+    const raw = value.trim();
+    if (!raw) return '#';
+    if (/^(https?:|tg:|mailto:|tel:)/i.test(raw)) return raw;
+    const clean = raw.replace(/^@/, '').replace(/^\/+/, '');
+    if (key === 'tg') return `https://t.me/${clean.replace(/^t\.me\//i, '')}`;
+    if (key === 'ig') return `https://instagram.com/${clean.replace(/^instagram\.com\//i, '')}`;
+    if (key === 'yt') return clean.includes('youtube.com') || clean.includes('youtu.be') ? `https://${clean}` : `https://youtube.com/${clean}`;
+    if (key === 'fb') return clean.includes('facebook.com') || clean.includes('fb.com') ? `https://${clean}` : `https://facebook.com/${clean}`;
+    return `https://${clean}`;
   }
 
   private socialIcon(type: 'telegram' | 'instagram' | 'youtube' | 'facebook' | 'phone') {
