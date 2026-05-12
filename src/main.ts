@@ -1375,6 +1375,8 @@ Foydalanuvchi: ${userInput}`;
     const isInfo = this.hasInfoIntent(normalized);
     const targetSection = this.resolveNavigationTarget(normalized);
     const panelTarget = this.resolvePanelKeywordTarget(normalized);
+    const exactPanelRequest = panelTarget ? this.isExactPanelKeyword(normalized, panelTarget) : false;
+    const explicitPanelOpen = this.userAskedPanelOpen(normalized);
     this.livePresentationReady = true;
 
     if (isNavigation && !isInfo) {
@@ -1388,6 +1390,21 @@ Foydalanuvchi: ${userInput}`;
     }
 
     if (targetSection?.type === 'section' && !isInfo && !panelTarget) {
+      this.runLiveKeywordAction(`section:${targetSection.key}`, () => {
+        this.scrollToSection(targetSection.id, targetSection.label, 'auto', false);
+        this.lastLiveSectionKey = targetSection.key;
+        if (this.panelViewerOpen) this.closePanelViewer();
+      });
+      return true;
+    }
+
+    if (
+      targetSection?.type === 'section' &&
+      panelTarget &&
+      !isInfo &&
+      !explicitPanelOpen &&
+      !exactPanelRequest
+    ) {
       this.runLiveKeywordAction(`section:${targetSection.key}`, () => {
         this.scrollToSection(targetSection.id, targetSection.label, 'auto', false);
         this.lastLiveSectionKey = targetSection.key;
@@ -1460,6 +1477,7 @@ Foydalanuvchi: ${userInput}`;
 
   private resolveFallbackInfoPanel(text: string): {collection: PanelCollection; index: number; sectionId: string; label: string} | null {
     if (!this.hasInfoIntent(text)) return null;
+    if (!this.isVagueSectionCommand(text) && !this.userAskedPanelOpen(text) && !text.includes('shu haqda') && !text.includes('u haqda')) return null;
     const sectionTarget = this.resolveNavigationTarget(text);
     const key = sectionTarget?.type === 'section' ? sectionTarget.key : this.lastLiveSectionKey;
     if (!key && !this.userAskedPanelOpen(text)) return null;
@@ -1993,7 +2011,11 @@ ${body}`,
     if (!matches.length) return null;
     matches.sort((a, b) => b.score - a.score || Number(b.exact) - Number(a.exact) || b.length - a.length);
     const best = matches[0];
-    if (best.candidate.index < 0 || best.score < 430) return null;
+    const runnerUp = matches.find(match => (
+      `${match.candidate.collection}:${match.candidate.index}` !== `${best.candidate.collection}:${best.candidate.index}`
+    ));
+    if (best.candidate.index < 0 || best.score < 620) return null;
+    if (!best.exact && runnerUp && runnerUp.score >= best.score - 85) return null;
     const found = best.candidate;
     return {
       collection: found.collection,

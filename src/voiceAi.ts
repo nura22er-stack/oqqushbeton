@@ -308,6 +308,7 @@ export class VoiceAiAssistant {
       if (!this.isActive || startId !== this.startId) return;
       this.microphonePromise = this.prepareMicrophone(startId);
       this.startBrowserRecognition();
+      this.sendLocalGreeting();
       this.connectSocket(startId);
     } catch (error) {
       if (!this.isActive || startId !== this.startId) return;
@@ -437,8 +438,9 @@ export class VoiceAiAssistant {
       this.setupComplete = true;
       this.isConnecting = false;
       this.reconnectAttempts = 0;
-      this.setLiveState('speaking', 'Gemini salomlashmoqda...');
-      this.updateTranscript('Gemini Live ulandi. Salomlashuv yuborildi.');
+      this.setLiveState(this.awaitingGreeting ? 'speaking' : 'listening', this.awaitingGreeting ? 'AI salomlashmoqda...' : 'Tinglayapman...');
+      this.updateTranscript(this.awaitingGreeting ? 'Gemini Live ulandi. Salomlashuv yuborildi.' : 'Gemini Live ulandi. Endi gapiring.');
+      if (this.greeted && !this.awaitingGreeting && this.mediaStream) void this.startMicrophoneStream();
       this.sendGreeting();
       return;
     }
@@ -480,6 +482,7 @@ export class VoiceAiAssistant {
       const audioData = inlineData?.data || part.data;
       if (!audioData) continue;
       this.clearResponseTimer();
+      this.stopLocalSpeech();
       this.setLiveState('speaking', 'AI gapiryapti...');
       this.enqueueAudio(String(audioData));
     }
@@ -822,10 +825,11 @@ export class VoiceAiAssistant {
     this.greetingTurnComplete = false;
     const greeting = 'Assalomu aleykum, men Oqqush Beton kompaniyasining virtual agentiman. Qanday yordam bera olaman?';
     this.updateSubText(greeting);
+    this.stopQueuedAudio();
     this.speakLocal(greeting, () => this.finishGreeting());
     window.setTimeout(() => {
       if (this.isActive && this.awaitingGreeting) this.finishGreeting();
-    }, 1600);
+    }, 2100);
   }
 
   private finishGreeting() {
@@ -1023,6 +1027,7 @@ export class VoiceAiAssistant {
       return;
     }
 
+    this.stopLocalSpeech();
     if (this.isAudioPlaying()) this.stopQueuedAudio();
 
     if (this.onVoiceCommand?.(text)) {
