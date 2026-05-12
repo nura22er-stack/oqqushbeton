@@ -302,6 +302,36 @@
     transition-duration: 220ms !important;
   }
 
+  #admin-sidebar .overflow-x-auto {
+    overflow-x: visible;
+    white-space: normal;
+  }
+
+  #admin-sidebar .overflow-x-auto > .flex {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+    white-space: normal;
+  }
+
+  .admin-nav-btn {
+    min-width: 0;
+    width: 100%;
+    min-height: 84px;
+    justify-content: center;
+    padding: 0.9rem 0.75rem;
+    gap: 0.55rem;
+  }
+
+  .admin-nav-btn span {
+    font-size: 0.66rem;
+    line-height: 1.2;
+    letter-spacing: 0.08em;
+    text-align: center;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
   .slide-div {
     background-size: cover;
     background-position: center center;
