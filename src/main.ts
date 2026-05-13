@@ -3338,7 +3338,15 @@ ${this.getAiContext()}`,
   private hasUnsyncedLocalSiteChanges() {
     const changedAt = Number(localStorage.getItem('oqqush_last_local_change_at') || '0');
     const syncedAt = Number(localStorage.getItem('oqqush_last_local_sync_at') || '0');
-    return changedAt > syncedAt;
+    if (changedAt <= syncedAt) return false;
+
+    // A failed/old sync marker should not block another device's fresh server state forever.
+    // Recent edits still get a short window to finish uploading before we import anything.
+    if (Date.now() - changedAt > 45000) {
+      localStorage.setItem('oqqush_last_local_sync_at', String(changedAt));
+      return false;
+    }
+    return true;
   }
 
   private saveLocalValue(key: string, value: string | null) {
@@ -3527,7 +3535,10 @@ ${this.getAiContext()}`,
     }
     if (this.siteSyncImportInFlight) return;
     if (this.siteSyncInFlight || this.siteSyncTimer) return;
-    if (this.hasUnsyncedLocalSiteChanges()) return;
+    if (this.hasUnsyncedLocalSiteChanges()) {
+      this.queueServerSiteSync(400);
+      return;
+    }
 
     this.siteSyncImportInFlight = true;
     try {
@@ -3603,7 +3614,10 @@ ${this.getAiContext()}`,
 
   private async checkServerSiteBackupFreshness(force = false) {
     if (this.siteSyncInFlight || this.siteSyncImportInFlight || this.siteSyncTimer) return;
-    if (!force && this.hasUnsyncedLocalSiteChanges()) return;
+    if (!force && this.hasUnsyncedLocalSiteChanges()) {
+      this.queueServerSiteSync(400);
+      return;
+    }
     const now = Date.now();
     if (!force && now - this.lastServerSyncCheck < 2500) return;
     this.lastServerSyncCheck = now;
