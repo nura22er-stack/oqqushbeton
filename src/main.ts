@@ -1961,16 +1961,7 @@ ${body}`,
     const keywordTarget = this.resolvePanelKeywordTarget(text);
     if (keywordTarget) return keywordTarget;
 
-    if (source === 'user') {
-      if (!explicitInfo) return null;
-      if (this.hasInfoIntent(text) && containsAny(['mahsulot', 'maxsulot', 'shagal', 'shag al', 'sheben', 'pesok', 'qum'])) {
-        return {collection: 'products', index: 0, sectionId: 'products-section', label: 'Mahsulotlar'};
-      }
-      if (this.hasInfoIntent(text) && containsAny(['texnika', 'transport'])) {
-        return {collection: 'transport', index: 0, sectionId: 'transport', label: 'Texnika'};
-      }
-      return null;
-    }
+    if (source === 'user') return null;
 
     const productPanelSections = this.productSections.flatMap(section => (section.panels || []).map(panel => ({
       section,
@@ -1997,18 +1988,12 @@ ${body}`,
     if (source === 'assistant') return null;
 
     if (!explicitInfo) return null;
-    if (containsAny(['mahsulot', 'maxsulot', 'shagal', 'shag al', 'sheben', 'pesok', 'qum'])) {
-      return {collection: 'products', index: 0, sectionId: 'products-section', label: 'Mahsulotlar'};
-    }
-    if (containsAny(['texnika', 'transport', 'nasos', 'mikser', 'kran', 'ekskavator'])) {
-      return {collection: 'transport', index: 0, sectionId: 'transport', label: 'Texnika'};
-    }
     return null;
   }
 
   private resolvePanelKeywordTarget(text: string): {collection: PanelCollection; index: number; sectionId: string; label: string} | null {
     const candidates = this.getAllPanelKeywordEntries();
-    const matches: Array<{candidate: typeof candidates[number]; score: number; length: number; exact: boolean}> = [];
+    const matches: Array<{candidate: typeof candidates[number]; score: number; length: number; exact: boolean; phrase: boolean}> = [];
 
     candidates.forEach(candidate => {
       candidate.keywords
@@ -2023,18 +2008,20 @@ ${body}`,
             score,
             length: normalizedKeyword.length,
             exact: normalizedKeyword === this.normalizeVoiceCommand(candidate.label),
+            phrase: this.findKeywordPosition(text, normalizedKeyword) >= 0,
           });
         });
     });
 
     if (!matches.length) return null;
-    matches.sort((a, b) => b.score - a.score || Number(b.exact) - Number(a.exact) || b.length - a.length);
+    matches.sort((a, b) => Number(b.phrase) - Number(a.phrase) || b.score - a.score || Number(b.exact) - Number(a.exact) || b.length - a.length);
     const best = matches[0];
     const runnerUp = matches.find(match => (
       `${match.candidate.collection}:${match.candidate.index}` !== `${best.candidate.collection}:${best.candidate.index}`
     ));
     if (best.candidate.index < 0 || best.score < 620) return null;
-    if (!best.exact && runnerUp && runnerUp.score >= best.score - 85) return null;
+    if (!best.phrase && runnerUp && runnerUp.score >= best.score - 120) return null;
+    if (!best.phrase && !best.exact && best.score < 900) return null;
     const found = best.candidate;
     return {
       collection: found.collection,
@@ -2046,6 +2033,7 @@ ${body}`,
 
   private isStrongPanelKeyword(keyword: string) {
     const normalized = this.normalizeVoiceCommand(keyword);
+    if (['kran', 'sita'].includes(normalized)) return true;
     if (normalized.length >= 5) return true;
     if (/\d/.test(normalized) && normalized.length >= 3) return true;
     return normalized.split(/\s+/).length >= 2;
@@ -2055,7 +2043,7 @@ ${body}`,
     const normalizedKeyword = this.normalizeVoiceCommand(keyword);
     if (!normalizedKeyword) return -1;
     const escaped = normalizedKeyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const suffixes = '(?:ni|ning|ga|da|dan|lar|lari|larni|larga|larda|lardan)?';
+    const suffixes = '(?:si|sini|sining|siga|sida|sidan|ni|ning|ga|da|dan|lar|lari|larni|larga|larda|lardan)?';
     const regex = new RegExp(`(^|\\s)${escaped}${suffixes}(?=\\s|$)`, 'g');
     let match: RegExpExecArray | null;
     let foundAt = -1;
