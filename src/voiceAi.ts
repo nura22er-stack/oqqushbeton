@@ -46,6 +46,8 @@ const OUTPUT_START_LEAD_SEC = 0.05;
 const SPEECH_RMS_THRESHOLD = 0.006;
 const DEFAULT_SILENCE_THRESHOLD = 0.0125;
 const AI_SPEECH_INPUT_GUARD_MS = 700;
+const CALL_RING_DURATION_MS = 2600;
+const CALL_RING_BEEP_MS = 520;
 
 const CYRILLIC_TO_LATIN: Record<string, string> = {
   а: 'a',
@@ -209,6 +211,10 @@ export class VoiceAiAssistant {
   private farewellAudioStarted = false;
   private closeAfterFarewellTimer: number | null = null;
   private ignoreInputUntil = 0;
+  private callRingNodes: Array<OscillatorNode | GainNode> = [];
+  private callRingTimers: number[] = [];
+  private callRingResolve: (() => void) | null = null;
+  private callSignalDone = false;
   private recognition: BrowserSpeechRecognition | null = null;
   private recognitionRestartTimer: number | null = null;
 
@@ -264,6 +270,7 @@ export class VoiceAiAssistant {
     this.greeted = false;
     this.awaitingGreeting = false;
     this.greetingTurnComplete = false;
+    this.callSignalDone = false;
     this.closeAfterFarewell = false;
     this.farewellAudioStarted = false;
     if (this.closeAfterFarewellTimer) window.clearTimeout(this.closeAfterFarewellTimer);
@@ -278,8 +285,8 @@ export class VoiceAiAssistant {
     this.micBuffer = [];
     this.microphonePromise = null;
 
-    this.setLiveState('connecting', 'Assalomu aleykum...');
-    this.updateTranscript('Qo\'ng\'iroq ochilmoqda...');
+    this.setLiveState('connecting', 'Chaqirilmoqda...');
+    this.updateTranscript('Tuuut... tuuut...');
     this.startVisualizer();
 
     if (!this.apiKey) {
@@ -296,7 +303,11 @@ export class VoiceAiAssistant {
 
       if (!this.isActive || startId !== this.startId) return;
       this.microphonePromise = this.prepareMicrophone(startId);
-      this.connectSocket(startId);
+      this.connectSocket(startId, true);
+      await this.playCallSignal(startId);
+      if (!this.isActive || startId !== this.startId) return;
+      this.callSignalDone = true;
+      if (this.setupComplete) this.sendGreeting();
     } catch (error) {
       if (!this.isActive || startId !== this.startId) return;
       console.error('Gemini Live start error:', error);
@@ -313,6 +324,7 @@ export class VoiceAiAssistant {
     this.setupComplete = false;
     this.awaitingGreeting = false;
     this.greetingTurnComplete = false;
+    this.callSignalDone = false;
     this.closeAfterFarewell = false;
     this.farewellAudioStarted = false;
     if (this.closeAfterFarewellTimer) window.clearTimeout(this.closeAfterFarewellTimer);
@@ -322,19 +334,22 @@ export class VoiceAiAssistant {
     this.resetRuntimeState(true);
     this.microphonePromise = null;
     this.stopBrowserRecognition();
+    this.stopCallSignal();
     this.stopVisualizer();
     this.onStatusChange('idle');
     this.setLiveState('idle', 'System Ready');
     this.updateTranscript('Hali nutq aniqlanmadi.');
   }
 
-  private connectSocket(startId: number) {
+  private connectSocket(startId: number, keepCallState = false) {
     if (!this.isActive || startId !== this.startId) return;
 
     this.closeSocket();
     this.setupComplete = false;
     this.isConnecting = true;
-    this.setLiveState('connecting', this.reconnectAttempts ? 'Qayta ulanmoqda...' : 'Gemini Live ulanmoqda...');
+    if (!keepCallState) {
+      this.setLiveState('connecting', this.reconnectAttempts ? 'Qayta ulanmoqda...' : 'Gemini Live ulanmoqda...');
+    }
 
     const url = `${LIVE_ENDPOINT}?key=${encodeURIComponent(this.apiKey)}`;
     const ws = new WebSocket(url);
@@ -420,6 +435,10 @@ export class VoiceAiAssistant {
       this.setupComplete = true;
       this.isConnecting = false;
       this.reconnectAttempts = 0;
+      if (!this.callSignalDone) {
+        this.updateTranscript('Gemini Live tayyor. AI go\'shakni ko\'tarishini kutyapman...');
+        return;
+      }
       this.setLiveState(this.awaitingGreeting ? 'speaking' : 'listening', this.awaitingGreeting ? 'AI salomlashmoqda...' : 'Tinglayapman...');
       this.updateTranscript(this.awaitingGreeting ? 'Gemini Live ulandi. Salomlashuv yuborildi.' : 'Gemini Live ulandi. Endi gapiring.');
       if (this.greeted && !this.awaitingGreeting && this.mediaStream) {
@@ -679,6 +698,76 @@ export class VoiceAiAssistant {
     }
   }
 
+  private playCallSignal(startId: number) {
+    this.stopCallSignal();
+    if (!this.outputContext) return Promise.resolve();
+
+    this.setLiveState('connecting', 'Chaqirilmoqda...');
+    this.updateTranscript('Tuuut... tuuut...');
+
+    const context = this.outputContext;
+    const startAt = context.currentTime + 0.06;
+    const beepGapSec = 0.86;
+    const beepDurationSec = CALL_RING_BEEP_MS / 1000;
+
+    for (let index = 0; index < 3; index += 1) {
+      const oscillator = context.createOscillator();
+      const gain = context.createGain();
+      const beepStart = startAt + index * beepGapSec;
+      const beepEnd = beepStart + beepDurationSec;
+
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(430, beepStart);
+      oscillator.frequency.linearRampToValueAtTime(470, beepStart + 0.08);
+      gain.gain.setValueAtTime(0.0001, beepStart);
+      gain.gain.exponentialRampToValueAtTime(0.09, beepStart + 0.035);
+      gain.gain.setValueAtTime(0.09, Math.max(beepStart + 0.04, beepEnd - 0.08));
+      gain.gain.exponentialRampToValueAtTime(0.0001, beepEnd);
+
+      oscillator.connect(gain);
+      gain.connect(context.destination);
+      oscillator.start(beepStart);
+      oscillator.stop(beepEnd + 0.02);
+      oscillator.onended = () => {
+        oscillator.disconnect();
+        gain.disconnect();
+        this.callRingNodes = this.callRingNodes.filter(node => node !== oscillator && node !== gain);
+      };
+      this.callRingNodes.push(oscillator, gain);
+    }
+
+    return new Promise<void>(resolve => {
+      this.callRingResolve = resolve;
+      const timer = window.setTimeout(() => {
+        this.callRingTimers = this.callRingTimers.filter(item => item !== timer);
+        if (this.callRingResolve === resolve) this.callRingResolve = null;
+        if (this.isActive && startId === this.startId) this.updateTranscript('AI go\'shakni ko\'tarmoqda...');
+        resolve();
+      }, CALL_RING_DURATION_MS);
+      this.callRingTimers.push(timer);
+    });
+  }
+
+  private stopCallSignal() {
+    this.callRingTimers.forEach(timer => window.clearTimeout(timer));
+    this.callRingTimers = [];
+    this.callRingResolve?.();
+    this.callRingResolve = null;
+    this.callRingNodes.forEach(node => {
+      try {
+        if ('stop' in node) (node as OscillatorNode).stop();
+      } catch {
+        // The ring tone node may already be stopped.
+      }
+      try {
+        node.disconnect();
+      } catch {
+        // The ring tone node may already be disconnected.
+      }
+    });
+    this.callRingNodes = [];
+  }
+
   private sendAudioChunk(chunk: Float32Array, hasSpeech: boolean) {
     this.sendJson({
       realtimeInput: {
@@ -788,6 +877,7 @@ export class VoiceAiAssistant {
     this.awaitingGreeting = true;
     this.greetingTurnComplete = false;
     const greeting = 'Assalomu aleykum, men Oqqush Beton kompaniyasining virtual agentiman. Qanday yordam bera olaman?';
+    this.setLiveState('speaking', 'AI salomlashmoqda...');
     this.updateSubText(greeting);
     if (this.setupComplete && this.ws?.readyState === WebSocket.OPEN) {
       this.sendJson({
@@ -1101,6 +1191,7 @@ QOIDA 1 — FAQAT FUNCTION CHAQIRISH:
 Foydalanuvchi biror bo'lim yoki panel haqida so'rasa — DARHOL tegishli functionni chaqir.
 Hech qachon functiondan oldin yoki o'rniga matnli javob berma.
 Function response ichidagi "content" maydonidagi matnni o'qi, boshqa narsa qo'shma.
+Kalit so'z aniq mos kelmasa, boshqa bo'lim yoki panelni taxmin qilib ochma.
 
 QOIDA 2 — PANELLAR TARTIBI:
 - Avval bolim_ochish → keyin panel_och
@@ -1125,6 +1216,8 @@ QOIDA 4 — CHALKASHMASLIK:
 
 QOIDA 5 — SAYTDAN TASHQARIGA CHIQMA:
 - Faqat function response'dagi content'ni o'qi
+- Panel yoki bo'lim haqida ma'lumot berayotganda content ichidagi matnni to'liq va aniq o'qi
+- Sayt kontekstida yo'q bo'lgan gapni o'zingdan qo'shma
 - Narx, muddat, kafolat, texnik raqam qo'shma — agar contentda yo'q bo'lsa
 - "Bu ma'lumot bizda ko'rsatilmagan" de va to'xta
 
@@ -1132,8 +1225,8 @@ QOIDA 6 — SALOMLASHUV:
 Birinchi replikang AYNAN shu bo'lsin, o'zgartirma:
 "Assalomu aleykum, men Oqqush Beton kompaniyasining virtual agentiman. Qanday yordam bera olaman?"
 
-QOIDA 7 — QISQA BO'L:
-Har bir panel uchun 2-4 gap. Keraksiz so'z qo'shma.
+QOIDA 7 — ANIQ BO'L:
+Keraksiz so'z qo'shma. Panel contentida nechta ma'lumot bo'lsa, o'shani tartib bilan o'qi.
 Foydalanuvchi "to'xtat" yoki "yetarli" desa — darhol to'xta.
 
 SAYT KONTEKSTI:
