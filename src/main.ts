@@ -1072,7 +1072,7 @@ Foydalanuvchi: ${userInput}`;
         this.closeLiveActivePanel();
         this.livePresentationKey = '';
         this.liveAssistantTextWindow = '';
-      }, 1800);
+      }, 250);
       return {result: 'ok', content: 'Panel yopildi.'};
     }
     return {result: 'ignored', content: ''};
@@ -1423,6 +1423,11 @@ Foydalanuvchi: ${userInput}`;
     }
 
     if (panelTarget && (isInfo || explicitPanelOpen || exactPanelRequest)) {
+      if (
+        this.livePresentationKey &&
+        (this.singlePanelCloseFallbackTimer !== null || this.liveReadingMode)
+      ) return true;
+
       this.runLiveKeywordAction(`panel:${panelTarget.collection}:${panelTarget.index}`, () => {
         this.openLivePresentationTarget(panelTarget, 'user');
         this.readSingleLivePanel(panelTarget);
@@ -1524,7 +1529,12 @@ Foydalanuvchi: ${userInput}`;
       `PANEL: ${item.title}`,
       ...details.map((line, index) => `MA'LUMOT ${index + 1}: ${line}`),
     ].join('\n');
-    this.voiceAi?.sendTextInstruction(`Faqat quyidagi sayt paneli ma'lumotini o'qing. Hech narsa qo'shmang. Avval panel nomini ayting, keyin ma'lumotlarni tartib bilan o'qing. O'qib bo'lgach albatta panel_yop functionini chaqiring.\n\n${body}`);
+    this.voiceAi?.sendTextInstruction(`Faqat bitta panelni o'qing: quyidagi sayt paneli ma'lumotidan tashqariga chiqmang.
+Hech narsa qo'shmang, boshqa panel nomini aytmang va boshqa panelga o'tmang.
+Avval panel nomini ayting, keyin ma'lumotlarni tartib bilan o'qing.
+O'qib bo'lgach albatta panel_yop functionini chaqiring va keyingi foydalanuvchi buyrug'ini kuting.
+
+${body}`);
     const estimatedCloseDelay = Math.min(16000, Math.max(5200, body.length * 55));
     this.singlePanelCloseFallbackTimer = window.setTimeout(() => {
       this.singlePanelCloseFallbackTimer = null;
@@ -1926,7 +1936,7 @@ ${body}`,
       this.livePresentationKey = '';
       this.liveAssistantTextWindow = '';
       this.liveReadingMode = false;
-    }, 2200);
+    }, 450);
   }
 
   private closeLiveActivePanel() {

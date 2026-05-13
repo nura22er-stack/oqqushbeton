@@ -47,7 +47,7 @@ const SPEECH_RMS_THRESHOLD = 0.006;
 const DEFAULT_SILENCE_THRESHOLD = 0.0125;
 const AI_SPEECH_INPUT_GUARD_MS = 700;
 const CALL_RING_DURATION_MS = 4000;
-const CALL_RING_BEEP_MS = 1450;
+const CALL_RING_BEEP_MS = 1350;
 
 const CYRILLIC_TO_LATIN: Record<string, string> = {
   а: 'a',
@@ -707,10 +707,10 @@ export class VoiceAiAssistant {
 
     const context = this.outputContext;
     const startAt = context.currentTime + 0.06;
-    const beepGapSec = 2.05;
+    const beepGapSec = 2.3;
     const beepDurationSec = CALL_RING_BEEP_MS / 1000;
 
-    for (let index = 0; index < 3; index += 1) {
+    for (let index = 0; index < 2; index += 1) {
       const oscillator = context.createOscillator();
       const gain = context.createGain();
       const beepStart = startAt + index * beepGapSec;
@@ -1022,7 +1022,7 @@ export class VoiceAiAssistant {
     const recognition = new SpeechRecognitionCtor() as BrowserSpeechRecognition;
     recognition.lang = 'uz-UZ';
     recognition.continuous = true;
-    recognition.interimResults = false;
+    recognition.interimResults = true;
     recognition.maxAlternatives = 2;
     recognition.onresult = event => {
       const results = Array.from(event.results || []) as any[];
