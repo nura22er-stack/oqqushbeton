@@ -32,17 +32,7 @@ declare const process: {
 };
 
 const LIVE_ENDPOINT = 'wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent';
-const DEFAULT_MODEL = 'gemini-2.5-flash-live-preview';
-const FALLBACK_MODELS = [
-  'gemini-2.5-flash-live-preview',
-];
-
-const LIVE_MODEL_ALIASES: Record<string, string> = {
-  'gemini-2.5-flash-preview-native-audio-dialog': 'gemini-2.5-flash-live-preview',
-  'gemini-2.5-flash-native-audio-preview-12-2025': 'gemini-2.5-flash-live-preview',
-  'gemini-2.5-flash-native-audio-preview-09-2025': 'gemini-2.5-flash-live-preview',
-  'gemini-live-2.5-flash-preview': 'gemini-2.5-flash-live-preview',
-};
+const DEFAULT_MODEL = 'gemini-2.5-flash-native-audio-preview-12-2025';
 const INPUT_SAMPLE_RATE = 16000;
 const OUTPUT_SAMPLE_RATE = 24000;
 const INPUT_BUFFER_SIZE = 1024;
@@ -178,8 +168,6 @@ const readPath = (input: any, paths: string[][]) => {
 export class VoiceAiAssistant {
   private apiKey: string;
   private model: string;
-  private modelCandidates: string[] = [];
-  private modelIndex = 0;
   private ws: WebSocket | null = null;
   private mediaStream: MediaStream | null = null;
   private inputContext: AudioContext | null = null;
@@ -222,7 +210,6 @@ export class VoiceAiAssistant {
   private closeAfterFarewellTimer: number | null = null;
   private recognition: BrowserSpeechRecognition | null = null;
   private recognitionRestartTimer: number | null = null;
-  private localSpeechUtterance: SpeechSynthesisUtterance | null = null;
 
   constructor(
     private onStatusChange: (status: AssistantStatus) => void,
@@ -232,7 +219,6 @@ export class VoiceAiAssistant {
   ) {
     this.apiKey = apiKey;
     this.model = this.cleanModelName(process.env.GEMINI_LIVE_MODEL || DEFAULT_MODEL);
-    this.modelCandidates = Array.from(new Set([this.model, ...FALLBACK_MODELS.map(model => this.cleanModelName(model))]));
   }
 
   get active() {
@@ -247,8 +233,7 @@ export class VoiceAiAssistant {
   sendTextInstruction(text: string) {
     if (!this.isActive) return;
     if (!this.setupComplete || this.ws?.readyState !== WebSocket.OPEN) {
-      this.updateTranscript('Gemini Live hali ulanmagan. Lokal zaxira ovoz ishlayapti.');
-      this.speakLocal(this.extractSpeakableText(text), () => this.callbacks.onResponseDone?.());
+      this.updateTranscript('Gemini Live hali ulanmagan. Iltimos, bir lahza kuting.');
       return;
     }
     this.sendJson({
@@ -275,7 +260,6 @@ export class VoiceAiAssistant {
     this.manualStop = false;
     this.setupComplete = false;
     this.reconnectAttempts = 0;
-    this.modelIndex = 0;
     this.greeted = false;
     this.awaitingGreeting = false;
     this.greetingTurnComplete = false;
@@ -297,11 +281,9 @@ export class VoiceAiAssistant {
     this.startVisualizer();
 
     if (!this.apiKey) {
-      this.updateTranscript('Gemini API key topilmadi. Lokal ovozli boshqaruv ishlayapti.');
+      this.showError('Gemini API key topilmadi.');
       this.isConnecting = false;
       this.setupComplete = false;
-      this.sendLocalGreeting();
-      await this.prepareMicrophone(startId);
       return;
     }
 
@@ -312,14 +294,12 @@ export class VoiceAiAssistant {
 
       if (!this.isActive || startId !== this.startId) return;
       this.microphonePromise = this.prepareMicrophone(startId);
-      this.sendLocalGreeting();
       this.connectSocket(startId);
     } catch (error) {
       if (!this.isActive || startId !== this.startId) return;
       console.error('Gemini Live start error:', error);
-      this.updateTranscript(error instanceof Error ? this.limit(error.message) : 'Gemini Live ulanmagan. Lokal boshqaruv ishlayapti.');
+      this.showError(error instanceof Error ? this.limit(error.message) : 'Gemini Live ulanmagan.');
       this.isConnecting = false;
-      await this.prepareMicrophone(startId);
     }
   }
 
@@ -340,7 +320,6 @@ export class VoiceAiAssistant {
     this.resetRuntimeState(true);
     this.microphonePromise = null;
     this.stopBrowserRecognition();
-    this.stopLocalSpeech();
     this.stopVisualizer();
     this.onStatusChange('idle');
     this.setLiveState('idle', 'System Ready');
@@ -407,7 +386,6 @@ export class VoiceAiAssistant {
     ws.onclose = event => {
       if (!this.isActive || this.manualStop || startId !== this.startId || this.ws !== ws) return;
       console.warn('Gemini Live WebSocket closed:', event.code, event.reason);
-      if (!this.setupComplete && this.tryFallbackModel(event.reason || `WebSocket yopildi: ${event.code}`)) return;
       this.setupComplete = false;
       this.stopMicrophoneStream(false);
       this.reconnect(startId, event.reason || 'Ulanish uzildi.');
@@ -432,7 +410,6 @@ export class VoiceAiAssistant {
     const error = message.error || message.errorMessage;
     if (error) {
       const text = typeof error === 'string' ? error : error.message || JSON.stringify(error);
-      if (!this.setupComplete && this.tryFallbackModel(text)) return;
       this.showError(this.limit(text));
       return;
     }
@@ -488,7 +465,6 @@ export class VoiceAiAssistant {
       const audioData = inlineData?.data || part.data;
       if (!audioData) continue;
       this.clearResponseTimer();
-      this.stopLocalSpeech();
       this.setLiveState('speaking', 'AI gapiryapti...');
       this.enqueueAudio(String(audioData));
     }
@@ -825,22 +801,6 @@ export class VoiceAiAssistant {
       }, 4200);
       return;
     }
-
-    this.sendLocalGreeting();
-  }
-
-  private sendLocalGreeting() {
-    if (this.greeted && !this.awaitingGreeting) return;
-    this.greeted = true;
-    this.awaitingGreeting = true;
-    this.greetingTurnComplete = false;
-    const greeting = 'Assalomu aleykum, men Oqqush Beton kompaniyasining virtual agentiman. Qanday yordam bera olaman?';
-    this.updateSubText(greeting);
-    this.stopQueuedAudio();
-    this.speakLocal(greeting, () => this.finishGreeting());
-    window.setTimeout(() => {
-      if (this.isActive && this.awaitingGreeting) this.finishGreeting();
-    }, 2100);
   }
 
   private finishGreeting() {
@@ -889,28 +849,11 @@ export class VoiceAiAssistant {
 
   private cleanModelName(model: string) {
     const cleaned = model.replace(/^models\//, '').trim();
-    return LIVE_MODEL_ALIASES[cleaned] || cleaned || DEFAULT_MODEL;
+    return cleaned || DEFAULT_MODEL;
   }
 
   private modelPath() {
-    const model = this.modelCandidates[this.modelIndex] || this.model || DEFAULT_MODEL;
-    return `models/${this.cleanModelName(model)}`;
-  }
-
-  private tryFallbackModel(reason: string) {
-    if (this.modelIndex >= this.modelCandidates.length - 1) return false;
-    this.modelIndex += 1;
-    this.clearResponseTimer();
-    this.setupComplete = false;
-    this.stopMicrophoneStream(false);
-    this.stopQueuedAudio();
-    this.updateTranscript(`Live modeli almashtirilmoqda: ${this.modelCandidates[this.modelIndex]}`);
-    this.closeSocket();
-    window.setTimeout(() => {
-      if (this.isActive && !this.manualStop) this.connectSocket(this.startId);
-    }, 250);
-    console.warn('Gemini Live model fallback:', reason, '->', this.modelCandidates[this.modelIndex]);
-    return true;
+    return `models/${this.cleanModelName(this.model || DEFAULT_MODEL)}`;
   }
 
   private armResponseTimer() {
@@ -943,7 +886,6 @@ export class VoiceAiAssistant {
     this.delayedStopTimer = null;
     this.closeSocket();
     this.stopBrowserRecognition();
-    this.stopLocalSpeech();
     this.stopMicrophoneStream(closeContexts);
     this.stopAudio();
     this.audioQueue = [];
@@ -1041,7 +983,6 @@ export class VoiceAiAssistant {
       return;
     }
 
-    this.stopLocalSpeech();
     if (this.isAudioPlaying()) this.stopQueuedAudio();
 
     if (this.onVoiceCommand?.(text)) {
@@ -1101,7 +1042,20 @@ export class VoiceAiAssistant {
 
     window.setTimeout(() => {
       if (!this.isActive || !this.closeAfterFarewell) return;
-      this.speakLocal('Hop, yana savollaringiz bo\'lsa men shu yerdaman.', () => this.scheduleStop(250));
+      if (this.setupComplete && this.ws?.readyState === WebSocket.OPEN) {
+        this.sendJson({
+          clientContent: {
+            turns: [{
+              role: 'user',
+              parts: [{text: 'Aynan shu gapni audio qilib ayt va boshqa hech narsa qo\'shma: "Hop, yana savollaringiz bo\'lsa men shu yerdaman."'}],
+            }],
+            turnComplete: true,
+          },
+        });
+        this.armResponseTimer();
+        return;
+      }
+      this.scheduleStop(250);
     }, farewellDelay);
     this.closeAfterFarewellTimer = window.setTimeout(() => {
       if (this.isActive && this.closeAfterFarewell) this.stop();
@@ -1114,56 +1068,6 @@ export class VoiceAiAssistant {
 
   private isAudioPlaying() {
     return this.activeSources.length > 0 || (this.outputContext ? this.scheduledAudioTime > this.outputContext.currentTime + 0.02 : false);
-  }
-
-  private speakLocal(text: string, onDone?: () => void) {
-    const clean = this.extractSpeakableText(text);
-    if (!clean) {
-      onDone?.();
-      return;
-    }
-    this.stopQueuedAudio();
-    this.setLiveState('speaking', 'AI gapiryapti...');
-    this.updateSubText(this.limit(clean));
-
-    if (!('speechSynthesis' in window) || typeof SpeechSynthesisUtterance === 'undefined') {
-      window.setTimeout(() => {
-        if (this.isActive) this.setLiveState('listening', 'Tinglayapman...');
-        onDone?.();
-      }, Math.min(2500, Math.max(800, clean.length * 45)));
-      return;
-    }
-
-    this.stopLocalSpeech();
-    const utterance = new SpeechSynthesisUtterance(clean);
-    utterance.lang = 'uz-UZ';
-    utterance.rate = 1.05;
-    utterance.pitch = 1.08;
-    utterance.volume = 1;
-    utterance.onend = () => {
-      if (this.localSpeechUtterance !== utterance) return;
-      this.localSpeechUtterance = null;
-      if (this.isActive && !this.closeAfterFarewell) this.setLiveState('listening', 'Tinglayapman...');
-      onDone?.();
-    };
-    utterance.onerror = () => {
-      if (this.localSpeechUtterance === utterance) this.localSpeechUtterance = null;
-      if (this.isActive && !this.closeAfterFarewell) this.setLiveState('listening', 'Tinglayapman...');
-      onDone?.();
-    };
-    this.localSpeechUtterance = utterance;
-    window.speechSynthesis.speak(utterance);
-  }
-
-  private stopLocalSpeech() {
-    this.localSpeechUtterance = null;
-    if ('speechSynthesis' in window) {
-      try {
-        window.speechSynthesis.cancel();
-      } catch {
-        // Speech synthesis may be unavailable in some browsers.
-      }
-    }
   }
 
   private extractSpeakableText(text: string) {
