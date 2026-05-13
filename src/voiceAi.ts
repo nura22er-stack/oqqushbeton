@@ -45,7 +45,7 @@ const MAX_AUDIO_QUEUE_SEC = 2.5;
 const OUTPUT_START_LEAD_SEC = 0.05;
 const SPEECH_RMS_THRESHOLD = 0.006;
 const DEFAULT_SILENCE_THRESHOLD = 0.0125;
-const BARGE_IN_RMS_THRESHOLD = 0.04;
+const AI_SPEECH_INPUT_GUARD_MS = 700;
 
 const CYRILLIC_TO_LATIN: Record<string, string> = {
   а: 'a',
@@ -208,6 +208,7 @@ export class VoiceAiAssistant {
   private closeAfterFarewell = false;
   private farewellAudioStarted = false;
   private closeAfterFarewellTimer: number | null = null;
+  private ignoreInputUntil = 0;
   private recognition: BrowserSpeechRecognition | null = null;
   private recognitionRestartTimer: number | null = null;
 
@@ -273,6 +274,7 @@ export class VoiceAiAssistant {
     this.lastUserTranscript = '';
     this.lastAiText = '';
     this.lastAiCleanText = '';
+    this.ignoreInputUntil = 0;
     this.micBuffer = [];
     this.microphonePromise = null;
 
@@ -439,6 +441,7 @@ export class VoiceAiAssistant {
 
     if (serverContent.interrupted) {
       this.stopQueuedAudio();
+      this.ignoreInputUntil = 0;
       if (this.awaitingGreeting) this.finishGreeting();
       else this.setLiveState('listening', 'Tinglayapman...');
     }
@@ -465,6 +468,7 @@ export class VoiceAiAssistant {
       const audioData = inlineData?.data || part.data;
       if (!audioData) continue;
       this.clearResponseTimer();
+      this.ignoreInputUntil = performance.now() + AI_SPEECH_INPUT_GUARD_MS;
       this.setLiveState('speaking', 'AI gapiryapti...');
       this.enqueueAudio(String(audioData));
     }
@@ -578,14 +582,14 @@ export class VoiceAiAssistant {
   private handleInputSamples(samples: Float32Array, sampleRate: number) {
     if (!this.isActive || !this.setupComplete || this.ws?.readyState !== WebSocket.OPEN) return;
 
-    const rawRms = getRms(downsampleAudio(samples, sampleRate));
     const prepared = prepareAudio(samples, sampleRate);
     const rms = getRms(prepared);
 
-    if (this.isAudioPlaying()) {
-      if (rawRms < BARGE_IN_RMS_THRESHOLD) return;
-      this.stopQueuedAudio();
-      this.setLiveState('user-speaking', 'Siz gapiryapsiz...');
+    if (this.hasPendingAudio() || performance.now() < this.ignoreInputUntil) {
+      this.micBuffer = [];
+      this.silenceCounter = 0;
+      this.speechFrameStreak = 0;
+      return;
     }
 
     const silenceThreshold = this.callbacks.silenceThreshold ?? DEFAULT_SILENCE_THRESHOLD;
@@ -734,6 +738,7 @@ export class VoiceAiAssistant {
         if (this.awaitingGreeting && this.greetingTurnComplete) this.finishGreeting();
         else if (this.closeAfterFarewell) this.scheduleStop(350);
         else if (this.isActive) {
+          this.ignoreInputUntil = performance.now() + AI_SPEECH_INPUT_GUARD_MS;
           this.setLiveState('listening', 'Tinglayapman...');
           this.callbacks.onResponseDone?.();
         }
@@ -768,6 +773,7 @@ export class VoiceAiAssistant {
     });
     this.activeSources = [];
     this.scheduledAudioTime = this.outputContext?.currentTime || 0;
+    this.ignoreInputUntil = performance.now() + 250;
   }
 
   private stopAudio() {
@@ -892,6 +898,7 @@ export class VoiceAiAssistant {
     this.activeSources = [];
     this.micBuffer = [];
     this.scheduledAudioTime = 0;
+    this.ignoreInputUntil = 0;
     this.setupComplete = false;
   }
 
@@ -975,13 +982,16 @@ export class VoiceAiAssistant {
     const text = cleanUzbekText(rawText);
     if (!text || text === this.lastUserTranscript) return;
     if (this.awaitingGreeting) return;
-    this.lastUserTranscript = text;
-    this.updateTranscript(this.limit(text));
 
     if (this.hasStopIntent(text)) {
       this.requestGracefulStop();
       return;
     }
+
+    if (this.hasPendingAudio() || performance.now() < this.ignoreInputUntil) return;
+
+    this.lastUserTranscript = text;
+    this.updateTranscript(this.limit(text));
 
     if (this.isAudioPlaying()) this.stopQueuedAudio();
 
