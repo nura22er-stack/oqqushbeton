@@ -46,8 +46,8 @@ const OUTPUT_START_LEAD_SEC = 0.05;
 const SPEECH_RMS_THRESHOLD = 0.006;
 const DEFAULT_SILENCE_THRESHOLD = 0.0125;
 const AI_SPEECH_INPUT_GUARD_MS = 700;
-const CALL_RING_DURATION_MS = 2600;
-const CALL_RING_BEEP_MS = 520;
+const CALL_RING_DURATION_MS = 4000;
+const CALL_RING_BEEP_MS = 1450;
 
 const CYRILLIC_TO_LATIN: Record<string, string> = {
   а: 'a',
@@ -707,7 +707,7 @@ export class VoiceAiAssistant {
 
     const context = this.outputContext;
     const startAt = context.currentTime + 0.06;
-    const beepGapSec = 0.86;
+    const beepGapSec = 2.05;
     const beepDurationSec = CALL_RING_BEEP_MS / 1000;
 
     for (let index = 0; index < 3; index += 1) {
@@ -720,8 +720,8 @@ export class VoiceAiAssistant {
       oscillator.frequency.setValueAtTime(430, beepStart);
       oscillator.frequency.linearRampToValueAtTime(470, beepStart + 0.08);
       gain.gain.setValueAtTime(0.0001, beepStart);
-      gain.gain.exponentialRampToValueAtTime(0.09, beepStart + 0.035);
-      gain.gain.setValueAtTime(0.09, Math.max(beepStart + 0.04, beepEnd - 0.08));
+      gain.gain.exponentialRampToValueAtTime(0.18, beepStart + 0.04);
+      gain.gain.setValueAtTime(0.18, Math.max(beepStart + 0.05, beepEnd - 0.12));
       gain.gain.exponentialRampToValueAtTime(0.0001, beepEnd);
 
       oscillator.connect(gain);
