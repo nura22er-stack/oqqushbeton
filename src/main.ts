@@ -540,6 +540,7 @@ class App {
       const bell = document.getElementById('ai-icon-bell');
       const xIcon = document.getElementById('ai-icon-x');
       const statusBox = document.getElementById('ai-status-box');
+      const assistantBtn = document.getElementById('ai-assistant-btn');
       const subText = document.getElementById('ai-sub-text');
 
       if (status === 'active' || status === 'connecting' || status === 'listening' || status === 'user-speaking' || status === 'speaking') {
@@ -555,6 +556,8 @@ class App {
         btnBg?.classList.add('opacity-100');
         pulse?.classList.remove('scale-100', 'opacity-0');
         pulse?.classList.add('scale-125', 'opacity-100');
+        assistantBtn?.classList.toggle('ai-ringing', status === 'connecting');
+        statusBox?.classList.toggle('ai-call-waiting', status === 'connecting');
       } else if (status === 'idle') {
         this.livePresentationReady = false;
         if (this.livePresentationCloseTimer) window.clearTimeout(this.livePresentationCloseTimer);
@@ -582,8 +585,12 @@ class App {
         pulse?.classList.remove('scale-125');
         pulse?.classList.add('scale-100');
         pulse?.classList.add('opacity-0');
+        assistantBtn?.classList.remove('ai-ringing');
+        statusBox?.classList.remove('ai-call-waiting');
         if (subText) subText.textContent = "System Ready";
       } else if (status === 'error') {
+         assistantBtn?.classList.remove('ai-ringing');
+         statusBox?.classList.remove('ai-call-waiting');
          if (subText) subText.textContent = "Xatolik yuz berdi";
          this.toast('AI ulanishda xato! Mikrofon ruxsati, API key yoki Gemini Live modelini tekshiring.', true);
       }
@@ -1333,6 +1340,8 @@ Foydalanuvchi: ${userInput}`;
   }
 
   private resetLiveButtonUi() {
+    document.getElementById('ai-assistant-btn')?.classList.remove('ai-ringing');
+    document.getElementById('ai-status-box')?.classList.remove('ai-call-waiting');
     document.getElementById('ai-icon-bell')?.classList.remove('hidden');
     document.getElementById('ai-icon-x')?.classList.add('hidden');
     document.getElementById('ai-btn-bg')?.classList.remove('opacity-100');
@@ -1413,7 +1422,7 @@ Foydalanuvchi: ${userInput}`;
       return true;
     }
 
-    if (panelTarget) {
+    if (panelTarget && (isInfo || explicitPanelOpen || exactPanelRequest)) {
       this.runLiveKeywordAction(`panel:${panelTarget.collection}:${panelTarget.index}`, () => {
         this.openLivePresentationTarget(panelTarget, 'user');
         this.readSingleLivePanel(panelTarget);

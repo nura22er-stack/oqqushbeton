@@ -128,6 +128,35 @@
     @apply bg-white/10 border border-white/20 backdrop-blur-2xl px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 transition-all duration-300;
   }
 
+  #ai-assistant-btn.ai-ringing {
+    animation: ai-call-ring 920ms ease-in-out infinite;
+    box-shadow: 0 0 0 0 rgba(103, 232, 249, 0.55), 0 22px 70px rgba(8, 145, 178, 0.38);
+  }
+
+  #ai-assistant-btn.ai-ringing #ai-pulse {
+    animation: ai-call-pulse 1.15s ease-out infinite;
+  }
+
+  #ai-status-box.ai-call-waiting {
+    border-color: rgba(103, 232, 249, 0.52);
+    box-shadow: 0 32px 90px rgba(0,0,0,0.65), 0 0 42px rgba(103, 232, 249, 0.18);
+  }
+
+  @keyframes ai-call-ring {
+    0%, 100% { transform: translateZ(0) rotate(0deg) scale(1); }
+    12% { transform: translate3d(-1px, 0, 0) rotate(-4deg) scale(1.02); }
+    24% { transform: translate3d(1px, 0, 0) rotate(4deg) scale(1.02); }
+    36% { transform: translate3d(-1px, 0, 0) rotate(-3deg) scale(1.01); }
+    48% { transform: translate3d(1px, 0, 0) rotate(3deg) scale(1.01); }
+    64% { transform: translateZ(0) rotate(0deg) scale(1); }
+  }
+
+  @keyframes ai-call-pulse {
+    0% { transform: scale(1); opacity: 0.75; }
+    70% { transform: scale(1.55); opacity: 0; }
+    100% { transform: scale(1.55); opacity: 0; }
+  }
+
   .about-copy p {
     color: rgba(255,255,255,0.97) !important;
     text-shadow: 0 1px 20px rgba(0,0,0,0.42);

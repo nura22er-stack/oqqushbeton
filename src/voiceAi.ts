@@ -349,7 +349,7 @@ export class VoiceAiAssistant {
             responseModalities: ['AUDIO'],
             speechConfig: {
               voiceConfig: {
-                prebuiltVoiceConfig: {voiceName: 'Aoede'},
+                prebuiltVoiceConfig: {voiceName: 'Puck'},
               },
             },
           },
