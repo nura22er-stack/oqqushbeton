@@ -2,7 +2,6 @@ type AssistantStatus = 'idle' | 'connecting' | 'active' | 'listening' | 'user-sp
 
 type VoiceAiCallbacks = {
   onUserText?: (text: string) => void;
-  onAssistantText?: (text: string) => void;
   onStopIntent?: () => number | void;
   onGreetingDone?: () => void;
   onResponseDone?: () => void;
@@ -186,7 +185,6 @@ export class VoiceAiAssistant {
   private visualizerInterval: number | null = null;
   private lastUserTranscript = '';
   private lastAiText = '';
-  private lastAiCleanText = '';
   private lastStateAt = 0;
   private greeted = false;
   private awaitingGreeting = false;
@@ -268,7 +266,6 @@ export class VoiceAiAssistant {
     this.playbackToken += 1;
     this.lastUserTranscript = '';
     this.lastAiText = '';
-    this.lastAiCleanText = '';
     this.ignoreInputUntil = 0;
     this.micBuffer = [];
     this.microphonePromise = null;
@@ -1029,21 +1026,6 @@ export class VoiceAiAssistant {
     this.lastAiText = text;
     this.updateSubText(this.limit(text));
     if (this.awaitingGreeting) return;
-
-    const clean = cleanUzbekText(text) || text.toLowerCase();
-    const previous = this.lastAiCleanText;
-    this.lastAiCleanText = clean;
-
-    const panelMatch = text.match(/^PANEL:\s*(.+)/i);
-    if (panelMatch) {
-      this.callbacks.onAssistantText?.(clean);
-      return;
-    }
-
-    const delta = previous && clean.startsWith(previous)
-      ? clean.slice(previous.length).trim()
-      : clean;
-    if (delta) this.callbacks.onAssistantText?.(delta);
   }
 
   private hasStopIntent(text: string) {
@@ -1100,20 +1082,6 @@ export class VoiceAiAssistant {
 
   private isAudioPlaying() {
     return this.activeSources.length > 0 || (this.outputContext ? this.scheduledAudioTime > this.outputContext.currentTime + 0.02 : false);
-  }
-
-  private extractSpeakableText(text: string) {
-    return text
-      .replace(/^[\s\S]*?(PANEL:\s*)/i, '$1')
-      .replace(/Aynan shu gapni ayting va boshqa hech narsa qo'shmang:\s*/i, '')
-      .replace(/Faqat quyidagi sayt paneli ma'lumotini o'qing[\s\S]*?\n\n/i, '')
-      .replace(/Faqat quyidagi Oqqush Beton sayt panel ma'lumotlarini o'qing[\s\S]*?\n\n/i, '')
-      .replace(/\bMA'LUMOT\s+\d+:\s*/gi, '')
-      .replace(/^\d+\.\s*/gm, '')
-      .replace(/\[CMD:[^\]]+\]/g, '')
-      .replace(/\s+/g, ' ')
-      .trim()
-      .slice(0, 900);
   }
 
   private buildSystemInstruction() {

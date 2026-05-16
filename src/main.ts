@@ -170,6 +170,7 @@ class App {
   private panelViewerCollection: PanelCollection | null = null;
   private panelViewerIndex = 0;
   private panelViewerOpen = false;
+  private aiInfoModeActive = false;
   private siteSyncTimer: number | null = null;
   private siteSyncInFlight = false;
   private siteSyncReady = false;
@@ -520,6 +521,11 @@ class App {
       const statusBox = document.getElementById('ai-status-box');
       const assistantBtn = document.getElementById('ai-assistant-btn');
       const subText = document.getElementById('ai-sub-text');
+      this.aiInfoModeActive = status === 'active'
+        || status === 'connecting'
+        || status === 'listening'
+        || status === 'user-speaking'
+        || status === 'speaking';
 
       if (status === 'active' || status === 'connecting' || status === 'listening' || status === 'user-speaking' || status === 'speaking') {
         statusBox?.classList.remove('hidden');
@@ -598,6 +604,7 @@ ${answer}`);
     document.getElementById('ai-assistant-btn')?.addEventListener('click', () => {
       this.closeAiChat();
       const wasActive = this.voiceAi.active;
+      if (!wasActive && this.panelViewerOpen) this.closePanelViewer();
       this.voiceAi.toggle(this.getAiContext('live'));
       if (wasActive) this.resetLiveButtonUi();
     });
@@ -707,14 +714,13 @@ ${answer}`);
       '5 BOSQICHLI TEKSHIRUV:',
       '1. Avval foydalanuvchi gapini tozalangan kalit so\'z sifatida tushun.',
       '2. "to\'xta/bas/yetarli" bo\'lsa boshqa amal qilma.',
-      '3. Faqat bo\'lim ochish so\'ralsa bo\'limni och, panel ochma.',
-      '4. Panel faqat aniq panel nomi yoki kuchli kalit so\'z mos kelsa ochilsin.',
-      '5. Amal bajarilgach qisqa javob ber va bir xil nomni takrorlama.',
+      '3. Saytni boshqarma: bo\'lim ochma, panel ochma, scroll qilma.',
+      '4. Bo\'lim nomi aytilsa shu bo\'lim ma\'lumotini ayt.',
+      '5. Panel yoki mahsulot nomi aytilsa faqat o\'sha ma\'lumotni ayt.',
       'QO\'SHIMCHA:',
       'Juda qisqa javob ber.',
       'Faqat sayt ma\'lumotlarini ayt.',
-      'Panel haqida gapirsang avval "PANEL: <nomi>" deb ayt.',
-      'Kalit so\'z panel nomiga aniq mos kelmasa panel ochma.',
+      'PANEL degan buyruq yoki maxsus signal ishlatma.',
     ].join('\n');
   }
 
@@ -843,7 +849,7 @@ Foydalanuvchi: ${userInput}`;
       'PANEL KEY-ACTION:',
       'Foydalanuvchi "haqida ma\'lumot ber", "ma\'lumot ber", "tushuntir" desa yoki aniq mahsulot/panel nomini ma\'lumot maqsadida so\'rasa faqat o\'sha panel ma\'lumotini o\'qing.',
       'Hech narsani ekranda ochmang; faqat ma\'lumotni o\'qing.',
-      'Bo\'lim haqida ma\'lumot so\'ralganda shu bo\'limdagi panellarni birma-bir o\'qing: avval "PANEL: <nomi>" deb ayting, keyin shu panel ma\'lumotini tugating, so\'ng keyingi panel nomini ayting.',
+      'Bo\'lim haqida ma\'lumot so\'ralganda shu bo\'limdagi ma\'lumotlarni oddiy matn qilib ayting.',
       'Chat tarixini unutib boring: faqat oxirgi buyruqqa amal qiling.',
       'Javob 50-60 so\'zdan oshmasin.',
       '',
@@ -857,7 +863,7 @@ Foydalanuvchi: ${userInput}`;
       lines.push(`BO'LIM: "${section.title}" (id: ${section.id})`);
       if (section.keywords.length) lines.push(`  Kalit so'zlar: ${section.keywords.join(', ')}`);
       section.panels.forEach(panel => {
-        lines.push(`  PANEL: "${panel.title}" (id: ${panel.id})`);
+        lines.push(`  MA'LUMOT: "${panel.title}" (id: ${panel.id})`);
         if (panel.keywords.length) lines.push(`    Kalit so'zlar: ${panel.keywords.join(', ')}`);
         if (panel.content) lines.push(`    Ma'lumot: ${panel.content.replace(/\s+/g, ' ').slice(0, 280)}`);
       });
@@ -3769,6 +3775,7 @@ ${this.getAiContext()}`,
   }
 
   public openPanelCollection(collection: PanelCollection, index: number) {
+    if (this.aiInfoModeActive || this.voiceAi?.active) return;
     const collections = this.getPanelViewerCollections();
     this.openPanelViewer(collections[collection] || [], index, collection);
   }
@@ -3864,6 +3871,7 @@ ${this.getAiContext()}`,
   }
 
   private openPanelViewer(items: PanelViewerItem[], index: number, collection: PanelCollection | null = null) {
+    if (this.aiInfoModeActive || this.voiceAi?.active) return;
     if (!items.length) return;
     this.pauseProjectCardVideos();
     this.panelViewerItems = items;
