@@ -615,16 +615,11 @@ class App {
           const handledByKeywords = this.handleLiveKeywordPipeline(text);
           if (!handledByKeywords) this.voiceAi?.sendTextInstruction('Bu buyruq uchun sayt ichida aniq bo\'lim yoki panel topilmadi. Faqat Oqqush Beton saytidagi bo\'lim yoki panel nomini ayting.');
         },
-        onAssistantText: (text) => {
-          if (this.liveReadingMode && this.isAssistantPanelSignal(text)) this.handleLivePresentation(text, 'assistant');
-        },
         onStopIntent: () => this.handleLiveStopIntent(),
         onGreetingDone: () => {
           this.livePresentationReady = true;
         },
         onResponseDone: () => this.finishLivePresentation(),
-        getToolDeclarations: () => this.getLiveToolDeclarations(),
-        onToolCall: (name, args) => this.handleLiveToolCall(name, args),
         silenceThreshold: 0.0085,
       },
     );
@@ -890,17 +885,14 @@ Foydalanuvchi: ${userInput}`;
     const lines = [
       'SAYT TUZILMASI VA AI KALIT SO\'ZLARI:',
       'AI faqat quyidagi bo\'lim va panellardan foydalanadi.',
-      'Siz boshqaruvchi AI operatorisiz. Ishlash zanjiri qat\'iy: Harakat -> Tasdiq -> Ma\'lumot.',
-      'NAVIGATSIYA KEY-ACTION:',
-      '1. KALIT: "Home", "Asosiy", "Bosh sahifa" -> ACTION: navigateTo("home"). Javob: "Bosh sahifa ochildi."',
-      '2. KALIT: "Texnika" -> ACTION: navigateTo("tech"). Javob: "Texnika bo\'limi ochildi."',
-      '3. KALIT: "Xizmatlar", "Narxlar", "Nima qilasizlar" -> ACTION: navigateTo("services"). Javob: "Xizmatlar bo\'limi ochildi."',
-      '4. KALIT: "Aloqa", "Telefon", "Manzil" -> ACTION: navigateTo("contact"). Javob: "Aloqa bo\'limi ochildi."',
-      'Bo\'lim ochish buyrug\'ida FAQAT navigateTo chaqiring. Hech qachon panel ochmang.',
+      'Siz ma\'lumot beruvchi AI operatorisiz. Saytda hech qanday bo\'lim yoki panel ochmang.',
+      'BO\'LIM KEY-ACTION:',
+      'Foydalanuvchi bo\'lim nomini aytsa shu bo\'lim ma\'lumotini o\'qing.',
+      'Home, Asosiy, Texnika, Xizmatlar, Aloqa kabi bo\'lim nomlari aytilsa ham ekranda o\'tish qilmang.',
       '',
       'PANEL KEY-ACTION:',
-      'Foydalanuvchi "haqida ma\'lumot ber", "ma\'lumot ber", "tushuntir" desa yoki aniq mahsulot/panel nomini ma\'lumot maqsadida so\'rasa ACTION: panel_och.',
-      'Panel ochilgandan keyin ma\'lumotni to\'liq o\'qing. Joriy panel tugamaguncha boshqa panel ochmang.',
+      'Foydalanuvchi "haqida ma\'lumot ber", "ma\'lumot ber", "tushuntir" desa yoki aniq mahsulot/panel nomini ma\'lumot maqsadida so\'rasa faqat o\'sha panel ma\'lumotini o\'qing.',
+      'Hech narsani ekranda ochmang; faqat ma\'lumotni o\'qing.',
       'Bo\'lim haqida ma\'lumot so\'ralganda shu bo\'limdagi panellarni birma-bir o\'qing: avval "PANEL: <nomi>" deb ayting, keyin shu panel ma\'lumotini tugating, so\'ng keyingi panel nomini ayting.',
       'Chat tarixini unutib boring: faqat oxirgi buyruqqa amal qiling.',
       'Javob 50-60 so\'zdan oshmasin.',
@@ -923,262 +915,14 @@ Foydalanuvchi: ${userInput}`;
 
     lines.push(
       'MUHIM QOIDALAR:',
-      '1. Biror panel yoki bo\'lim so\'ralganda DARHOL function chaqir — matn berma.',
-      '2. panel_och → contentni o\'qi → panel_yop → keyingi panel.',
-      '3. bolim_ochish faqat bo\'limga yo\'naltiradi, panel ochmir.',
-      '4. Har bir panel tugagach ALBATTA panel_yop chaqir.',
-      '5. Foydalanuvchi "to\'xtat" desa — panel_yop chaqir va jim tur.',
-      '6. Content ichidagi matndan tashqariga chiqma.',
+      '1. Biror panel yoki bo\'lim so\'ralganda ma\'lumot functionini chaqir.',
+      '2. Function response ichidagi contentni o\'qi.',
+      '3. Hech qachon saytni scroll qilma, panel ochma yoki modal ochma.',
+      '4. Foydalanuvchi "to\'xtat" desa jim tur.',
+      '5. Content ichidagi matndan tashqariga chiqma.',
     );
 
     return lines.join('\n');
-  }
-
-  private getLiveToolDeclarations() {
-    const keywordMap = this.buildLiveKeywordMap();
-    const panelIds = Array.from(new Set(Object.values(keywordMap)
-      .filter(value => value.type === 'panel')
-      .map(value => value.id)));
-    const sectionIds = Array.from(new Set([
-      ...Object.values(keywordMap)
-      .filter(value => value.type === 'section')
-      .map(value => value.id),
-      'home',
-      'about',
-      'services',
-      'tech',
-      'texnika',
-      'transport',
-      'products',
-      'mahsulotlar',
-      'products-section',
-      'concrete-mix',
-      'beton-qorishma',
-      'high-performance-concrete',
-      'maxsus-betonlar',
-      'plitalar',
-      'plitalar-section',
-      'gisht',
-      'gisht-section',
-      'laboratory',
-      'laboratoriya',
-      'projects',
-      'bajarilgan-ishlar',
-      'contact',
-      'footer',
-    ]));
-
-    return [
-      {
-        name: 'navigateTo',
-        description: 'Asosiy sayt bo\'limlariga o\'tish',
-        parameters: {
-          type: 'object',
-          properties: {
-            section_id: {
-              type: 'string',
-              enum: ['home', 'tech', 'services', 'contact'],
-              description: 'Faqat ruxsat etilgan asosiy bo\'lim ID',
-            },
-          },
-          required: ['section_id'],
-        },
-      },
-      {
-        name: 'openPanel',
-        description: 'Maxsus panel yoki modalni ochish',
-        parameters: {
-          type: 'object',
-          properties: {
-            panel_id: {
-              type: 'string',
-              enum: ['order-form', 'ai-info'],
-              description: 'Faqat ruxsat etilgan panel ID',
-            },
-          },
-          required: ['panel_id'],
-        },
-      },
-      {
-        name: 'panel_och',
-        description: 'Panel yoki accordion ni ochib ichidagi ma\'lumotni o\'qi',
-        parameters: {
-          type: 'object',
-          properties: {
-            panel_id: {
-              type: 'string',
-              enum: panelIds,
-              description: 'Panel ID',
-            },
-          },
-          required: ['panel_id'],
-        },
-      },
-      {
-        name: 'bolim_ochish',
-        description: 'Bo\'limga navigate qilish',
-        parameters: {
-          type: 'object',
-          properties: {
-            bolim_id: {
-              type: 'string',
-              enum: sectionIds,
-              description: 'Bo\'lim ID',
-            },
-          },
-          required: ['bolim_id'],
-        },
-      },
-      {
-        name: 'panel_yop',
-        description: 'Hozirgi ochiq panelni yop. Yangi panelga o\'tishdan oldin chaqir.',
-        parameters: {
-          type: 'object',
-          properties: {},
-          required: [],
-        },
-      },
-    ];
-  }
-
-  private async handleLiveToolCall(name: string, args: Record<string, any>) {
-    if (name === 'navigateTo') {
-      const target = this.resolveRecentUserSectionOverride();
-      return target
-        ? this.openAiSectionById(target.id)
-        : this.openAiSectionById(String(args.section_id || args.sectionId || args.id || ''));
-    }
-    if (name === 'openPanel') {
-      return this.openSpecialAiPanel(String(args.panel_id || args.panelId || args.id || ''));
-    }
-    if (name === 'panel_och') {
-      const recentUserCommand = Date.now() - this.lastLiveUserAt < 7000;
-      const navigationOnly = this.hasNavigationIntent(this.lastLiveUserText) && !this.hasInfoIntent(this.lastLiveUserText);
-      const panelAllowed = this.hasInfoIntent(this.lastLiveUserText) || this.lastUserMentionsPanelKeyword();
-      if (recentUserCommand && (navigationOnly || !panelAllowed)) {
-        return {result: 'ignored', content: 'Foydalanuvchi faqat bo\'lim ochishni so\'radi. Panel ochilmadi.'};
-      }
-      return this.openAiPanelById(String(args.panel_id || args.panelId || args.id || ''));
-    }
-    if (name === 'bolim_ochish' || name === 'navigatsiya_qil') {
-      const target = this.resolveRecentUserSectionOverride();
-      return target
-        ? this.openAiSectionById(target.id)
-        : this.openAiSectionById(String(args.bolim_id || args.bolimId || args.section_id || args.id || ''));
-    }
-    if (name === 'panel_yop') {
-      if (this.livePresentationCloseTimer) window.clearTimeout(this.livePresentationCloseTimer);
-      this.livePresentationCloseTimer = window.setTimeout(() => {
-        this.closeLiveActivePanel();
-        this.livePresentationKey = '';
-        this.liveAssistantTextWindow = '';
-      }, 250);
-      return {result: 'ok', content: 'Panel yopildi.'};
-    }
-    return {result: 'ignored', content: ''};
-  }
-
-  private resolveRecentUserSectionOverride() {
-    if (!this.lastLiveUserText || Date.now() - this.lastLiveUserAt > 7000) return null;
-    if (!this.hasNavigationIntent(this.lastLiveUserText)) return null;
-    const target = this.resolveNavigationTarget(this.lastLiveUserText);
-    return target?.type === 'section' ? target : null;
-  }
-
-  private lastUserMentionsPanelKeyword() {
-    if (!this.lastLiveUserText) return false;
-    return Object.entries(this.buildLiveKeywordMap()).some(([keyword, target]) => (
-      target.type === 'panel' && keyword.length > 2 && this.lastLiveUserText.includes(keyword)
-    ));
-  }
-
-  private openSpecialAiPanel(panelId: string) {
-    if (panelId === 'order-form') {
-      this.scrollToSection('footer', 'Aloqa', 'auto', false);
-      return {
-        result: 'ok',
-        panel_id: panelId,
-        content: 'Buyurtma berish uchun aloqa bo\'limiga o\'tkazdim. Telefon raqam yoki ijtimoiy tarmoqlar orqali bog\'lanishingiz mumkin.',
-      };
-    }
-
-    if (panelId === 'ai-info') {
-      const panel = document.getElementById('ai-status-box');
-      panel?.classList.remove('hidden', 'scale-90', 'opacity-0', 'translate-y-8');
-      panel?.classList.add('scale-100', 'opacity-100', 'translate-y-0');
-      return {
-        result: 'ok',
-        panel_id: panelId,
-        content: 'AI yordamchi sayt bo\'ylab bo\'limlarni ochadi, panel ma\'lumotlarini o\'qiydi va Oqqush Beton haqidagi savollarga javob beradi.',
-      };
-    }
-
-    return {result: 'error', content: 'Bunday panel ID mavjud emas.'};
-  }
-
-  private openAiPanelById(panelId: string) {
-    if (!panelId) return {result: 'error', content: 'Panel ID topilmadi.'};
-    const el = Array.from(document.querySelectorAll<HTMLElement>('[data-panel]'))
-      .find(item => item.dataset.panel === panelId);
-    if (!el) return {result: 'error', content: 'Panel topilmadi.'};
-
-    if (this.liveToolActivePanel && this.liveToolActivePanel !== panelId) {
-      document.querySelector<HTMLElement>(`[data-panel="${this.cssEscape(this.liveToolActivePanel)}"]`)?.classList.remove('ai-opened');
-    }
-
-    this.liveToolActivePanel = panelId;
-    el.classList.add('ai-opened');
-    el.scrollIntoView({behavior: 'auto', block: 'center'});
-
-    const target = this.resolvePanelCollectionByDataId(panelId);
-    if (target) this.openPanelCollection(target.collection, target.index);
-    else el.click();
-
-    const title = el.querySelector<HTMLElement>('[data-panel-title]')?.textContent?.trim() || '';
-    const content = el.querySelector<HTMLElement>('[data-panel-content]')?.textContent?.trim()
-      || el.dataset.aiContent
-      || el.textContent?.trim()
-      || '';
-
-    return {
-      result: 'ok',
-      panel_id: panelId,
-      title,
-      content: [title ? `PANEL: ${title}` : '', content].filter(Boolean).join('\n'),
-    };
-  }
-
-  private readAiPanelById(panelId: string) {
-    if (!panelId) return {result: 'error', content: 'Panel ID topilmadi.'};
-    const el = Array.from(document.querySelectorAll<HTMLElement>('[data-panel]'))
-      .find(item => item.dataset.panel === panelId);
-    if (!el) return {result: 'error', content: 'Panel topilmadi.'};
-
-    const title = el.querySelector<HTMLElement>('[data-panel-title]')?.textContent?.trim() || '';
-    const content = el.querySelector<HTMLElement>('[data-panel-content]')?.textContent?.trim()
-      || el.dataset.aiContent
-      || el.textContent?.trim()
-      || '';
-
-    return {
-      result: 'ok',
-      panel_id: panelId,
-      title,
-      content: [title ? `PANEL: ${title}` : '', content].filter(Boolean).join('\n'),
-    };
-  }
-
-  private openAiSectionById(sectionId: string) {
-    const normalizedSectionId = this.resolveSectionDomId(sectionId);
-    if (!sectionId) return {result: 'error', content: 'Bo\'lim ID topilmadi.'};
-    const el = Array.from(document.querySelectorAll<HTMLElement>('[data-section]'))
-      .find(item => item.dataset.section === sectionId || item.dataset.section === normalizedSectionId || item.id === normalizedSectionId);
-    if (!el) return {result: 'error', content: 'Bo\'lim topilmadi.'};
-
-    el.scrollIntoView({behavior: 'auto', block: 'start'});
-    this.lastLiveSectionKey = this.resolveSectionKey(sectionId);
-    const title = el.dataset.title || el.querySelector('h1,h2,h3')?.textContent?.trim() || sectionId;
-    return {result: 'ok', bolim_id: sectionId, title, content: ''};
   }
 
   private resolveSectionDomId(sectionId: string) {
@@ -1351,29 +1095,8 @@ Foydalanuvchi: ${userInput}`;
   }
 
   private handleLiveNavigationCommand(text: string) {
-    const normalized = this.normalizeVoiceCommand(text);
-    if (!this.hasNavigationIntent(normalized)) return false;
-    if (this.hasInfoIntent(normalized)) return false;
-
-    const target = this.resolveNavigationTarget(normalized)
-      || (this.isVagueSectionCommand(normalized)
-        ? {type: 'section' as const, id: 'products-section', label: 'Mahsulotlar', key: 'products'}
-        : null);
-    if (!target) return false;
-
-    const now = Date.now();
-    if (target.key === this.lastVoiceCommand && now - this.lastVoiceCommandAt < 2500) return true;
-    this.lastVoiceCommand = target.key;
-    this.lastVoiceCommandAt = now;
-
-    if (target.type === 'section') {
-      this.scrollToSection(target.id, target.label, 'auto', false);
-      this.lastLiveSectionKey = target.key;
-      return true;
-    }
-
-    this.openAdminTarget(target.tab, target.label);
-    return true;
+    void text;
+    return false;
   }
 
   private handleLiveKeywordPipeline(text: string) {
@@ -1390,19 +1113,21 @@ Foydalanuvchi: ${userInput}`;
 
     if (isNavigation && !isInfo) {
       if (!targetSection || targetSection.type !== 'section') return false;
+      const script = this.buildLiveReadingScriptForSectionKey(targetSection.key);
+      if (!script) return false;
       this.runLiveKeywordAction(`section:${targetSection.key}`, () => {
-        this.scrollToSection(targetSection.id, targetSection.label, 'auto', false);
         this.lastLiveSectionKey = targetSection.key;
-        if (this.panelViewerOpen) this.closePanelViewer();
+        this.startLiveReadingScript(script);
       });
       return true;
     }
 
     if (targetSection?.type === 'section' && !isInfo && !panelTarget) {
+      const script = this.buildLiveReadingScriptForSectionKey(targetSection.key);
+      if (!script) return false;
       this.runLiveKeywordAction(`section:${targetSection.key}`, () => {
-        this.scrollToSection(targetSection.id, targetSection.label, 'auto', false);
         this.lastLiveSectionKey = targetSection.key;
-        if (this.panelViewerOpen) this.closePanelViewer();
+        this.startLiveReadingScript(script);
       });
       return true;
     }
@@ -1414,10 +1139,11 @@ Foydalanuvchi: ${userInput}`;
       !explicitPanelOpen &&
       !exactPanelRequest
     ) {
+      const script = this.buildLiveReadingScriptForSectionKey(targetSection.key);
+      if (!script) return false;
       this.runLiveKeywordAction(`section:${targetSection.key}`, () => {
-        this.scrollToSection(targetSection.id, targetSection.label, 'auto', false);
         this.lastLiveSectionKey = targetSection.key;
-        if (this.panelViewerOpen) this.closePanelViewer();
+        this.startLiveReadingScript(script);
       });
       return true;
     }
@@ -1429,7 +1155,6 @@ Foydalanuvchi: ${userInput}`;
       ) return true;
 
       this.runLiveKeywordAction(`panel:${panelTarget.collection}:${panelTarget.index}`, () => {
-        this.openLivePresentationTarget(panelTarget, 'user');
         this.readSingleLivePanel(panelTarget);
       });
       return true;
@@ -1446,7 +1171,6 @@ Foydalanuvchi: ${userInput}`;
     const fallbackPanel = this.resolveFallbackInfoPanel(normalized);
     if (fallbackPanel) {
       this.runLiveKeywordAction(`panel:${fallbackPanel.collection}:${fallbackPanel.index}`, () => {
-        this.openLivePresentationTarget(fallbackPanel, 'user');
         this.readSingleLivePanel(fallbackPanel);
       });
       return true;
@@ -1472,8 +1196,6 @@ Foydalanuvchi: ${userInput}`;
     this.liveAssistantTextWindow = '';
     this.liveReadingQueue = script.targets || [];
     this.liveReadingQueueIndex = 0;
-    if (this.liveReadingQueue[0]) this.openLivePresentationTarget(this.liveReadingQueue[0], 'assistant');
-    this.scheduleLiveReadingFallback(1200);
     this.voiceAi?.sendTextInstruction(script.text);
   }
 
@@ -1532,34 +1254,9 @@ Foydalanuvchi: ${userInput}`;
     this.voiceAi?.sendTextInstruction(`Faqat bitta panelni o'qing: quyidagi sayt paneli ma'lumotidan tashqariga chiqmang.
 Hech narsa qo'shmang, boshqa panel nomini aytmang va boshqa panelga o'tmang.
 Avval panel nomini ayting, keyin ma'lumotlarni tartib bilan o'qing.
-O'qib bo'lgach albatta panel_yop functionini chaqiring va keyingi foydalanuvchi buyrug'ini kuting.
+O'qib bo'lgach keyingi foydalanuvchi savolini kuting. Hech qanday panel yoki bo'lim ochmang.
 
 ${body}`);
-    const estimatedCloseDelay = Math.min(16000, Math.max(5200, body.length * 55));
-    this.singlePanelCloseFallbackTimer = window.setTimeout(() => {
-      this.singlePanelCloseFallbackTimer = null;
-      if (!this.liveReadingMode) this.closeLiveActivePanel();
-    }, estimatedCloseDelay);
-  }
-
-  private handleLivePresentation(text: string, source: 'user' | 'assistant') {
-    if (!this.livePresentationReady) return;
-
-    let normalized = this.normalizeVoiceCommand(text);
-    if (source === 'user' && this.hasNavigationIntent(normalized) && !this.hasInfoIntent(normalized)) {
-      return;
-    }
-    if (source === 'assistant') {
-      this.liveAssistantTextWindow = `${this.liveAssistantTextWindow} ${normalized}`.trim().slice(-420);
-      normalized = this.liveAssistantTextWindow;
-    }
-
-    const target = source === 'assistant'
-      ? this.resolveLatestAssistantPanelTarget(this.liveAssistantTextWindow)
-      : this.resolveLivePresentationTarget(normalized, source);
-    if (!target) return;
-
-    this.openLivePresentationTarget(target, source);
   }
 
   private isAssistantPanelSignal(text: string) {
@@ -1567,73 +1264,8 @@ ${body}`);
     return normalized.startsWith('panel ');
   }
 
-  private openLivePresentationTarget(target: {collection: PanelCollection; index: number; sectionId: string; label: string}, source: 'user' | 'assistant' = 'assistant') {
-    if (this.livePresentationCloseTimer) window.clearTimeout(this.livePresentationCloseTimer);
-    this.livePresentationCloseTimer = null;
-
-    const key = `${target.collection}-${target.index}`;
-    if (
-      source === 'user' &&
-      (this.liveReadingMode || this.singlePanelCloseFallbackTimer !== null) &&
-      this.livePresentationKey &&
-      this.livePresentationKey !== key
-    ) return;
-    if (this.livePresentationKey === key && this.panelViewerOpen) return;
-    this.livePresentationKey = key;
-    this.liveOpenedPanel = true;
-
-    if (this.livePresentationSwitchTimer) window.clearTimeout(this.livePresentationSwitchTimer);
-    const openTarget = () => {
-      if (target.sectionId && !this.panelViewerOpen) this.scrollToSection(target.sectionId, target.label, 'auto', false);
-      this.openPanelCollection(target.collection, target.index);
-      if (source === 'assistant') this.liveAssistantTextWindow = `panel ${this.normalizeVoiceCommand(target.label)}`;
-      if (this.liveReadingMode) this.advanceLiveReadingQueue(target);
-    };
-    openTarget();
-  }
-
-  private resolveLatestAssistantPanelTarget(text: string) {
-    const normalized = this.normalizeVoiceCommand(text);
-    if (!normalized.startsWith('panel ')) return null;
-    const panelText = normalized.replace(/^panell?\s*/i, '').trim();
-    return this.resolveLivePresentationTarget(panelText, 'assistant');
-  }
-
-  private handleLiveReadingScript(text: string) {
-    if (!this.livePresentationReady) return;
-    const normalized = this.normalizeVoiceCommand(text);
-    const script = this.resolveLiveReadingScript(normalized);
-    if (!script) return;
-
-    const now = Date.now();
-    if (script.key === this.liveReadingScriptKey && now - this.liveReadingScriptAt < 8000) return;
-    this.liveReadingScriptKey = script.key;
-    this.liveReadingScriptAt = now;
-    this.liveReadingMode = true;
-    this.liveAssistantTextWindow = '';
-    this.liveReadingQueue = script.targets || [];
-    this.liveReadingQueueIndex = 0;
-    this.scheduleLiveReadingFallback(1800);
-
-    this.voiceAi?.sendTextInstruction(script.text);
-  }
-
-  private advanceLiveReadingQueue(target: {collection: PanelCollection; index: number; label: string}) {
-    const at = this.liveReadingQueue.findIndex(item => item.collection === target.collection && item.index === target.index);
-    if (at >= 0) this.liveReadingQueueIndex = Math.max(this.liveReadingQueueIndex, at + 1);
-    this.scheduleLiveReadingFallback(this.estimatePanelReadDelay(target.label));
-  }
-
   private scheduleLiveReadingFallback(delay: number) {
-    if (!this.liveReadingMode || !this.liveReadingQueue.length) return;
-    if (this.liveReadingFallbackTimer) window.clearTimeout(this.liveReadingFallbackTimer);
-    this.liveReadingFallbackTimer = window.setTimeout(() => {
-      this.liveReadingFallbackTimer = null;
-      if (!this.liveReadingMode) return;
-      const target = this.liveReadingQueue[this.liveReadingQueueIndex];
-      if (!target) return;
-      this.openLivePresentationTarget(target, 'assistant');
-    }, delay);
+    void delay;
   }
 
   private estimatePanelReadDelay(label: string) {
@@ -1648,19 +1280,6 @@ ${body}`);
     };
     const text = items[current.collection]?.[current.index]?.description || '';
     return Math.min(13000, Math.max(4500, text.length * 70));
-  }
-
-  private openFirstReadingPanel(key: string) {
-    const target = this.resolveFirstReadingTarget(key);
-    if (!target) return;
-    if (this.livePresentationCloseTimer) window.clearTimeout(this.livePresentationCloseTimer);
-    this.livePresentationCloseTimer = null;
-    if (this.livePresentationSwitchTimer) window.clearTimeout(this.livePresentationSwitchTimer);
-    this.livePresentationSwitchTimer = null;
-    this.livePresentationKey = `${target.collection}-${target.index}`;
-    this.liveOpenedPanel = true;
-    if (target.sectionId && !this.panelViewerOpen) this.scrollToSection(target.sectionId, target.label, 'auto', false);
-    this.openPanelCollection(target.collection, target.index);
   }
 
   private resolveFirstReadingTarget(key: string): {collection: PanelCollection; index: number; sectionId: string; label: string} | null {
@@ -1842,6 +1461,27 @@ ${body}`);
         eyebrow: 'Bajarilgan ish',
       })));
     }
+    if (key === 'services') {
+      return this.buildLiveReadingScript('services-all', this.services.map(item => ({
+        title: item.name,
+        description: item.description,
+        eyebrow: 'Xizmat',
+      })));
+    }
+    if (key === 'footer') {
+      return this.buildLiveReadingScript('contact-info', [
+        {title: 'Telefonlar', description: this.social.ph || 'ko\'rsatilmagan', eyebrow: 'Aloqa'},
+        {title: 'Telegram', description: this.social.tg || 'ko\'rsatilmagan', eyebrow: 'Aloqa'},
+        {title: 'Instagram', description: this.social.ig || 'ko\'rsatilmagan', eyebrow: 'Aloqa'},
+      ]);
+    }
+    if (key === 'about') {
+      return this.buildLiveReadingScript('about-info', [
+        {title: 'OQQUSH BETON', description: 'Zamonaviy qurilish kompaniyasi, ishonch, tajriba va sifatga sodiqlik tamoyillari asosida ishlaydi.'},
+        {title: 'ISHLAB CHIQARISH', description: 'Zamonaviy uskunalar va qat\'iy laboratoriya nazorati ostida olib boriladi.'},
+        {title: 'TEXNIKA VA QUVVAT', description: 'Yirik hajmdagi buyurtmalarni qisqa muddatda, sifatni pasaytirmasdan bajaradi.'},
+      ]);
+    }
     return null;
   }
 
@@ -1872,8 +1512,8 @@ ${body}`);
 Hech qanday yangi ma'lumot, narx, muddat yoki taxmin qo'shmang.
 Har bir panelni aynan shu tartibda o'qing: avval "PANEL: <nomi>" deb panel nomini to'liq ayting, keyin shu panel ostidagi "MA'LUMOT" qatorlarini bir boshidan o'qing.
 Bir panel ma'lumotlari tugamaguncha keyingi panelga o'tmang.
-Har bir panel tugagach panel_yop functionini chaqiring.
-Keyingi panelga o'tganda yana avval "PANEL: <nomi>" deb ayting, shunda sayt o'sha panelni darhol ochib ko'rsatadi.
+Keyingi panelga o'tganda yana avval "PANEL: <nomi>" deb ayting.
+Hech qanday panel, modal yoki bo'lim ochmang.
 Matndan tashqariga chiqmang va berilgan qatorlarni tashlab ketmang.
 
 ${body}`,
@@ -2495,11 +2135,6 @@ ${body}`,
     const thinking = this.appendAiChatMessage('Javob tayyorlanmoqda...', 'assistant');
 
     try {
-      if (this.handleChatNavigationCommand(text)) {
-        this.renderAssistantMessage(thinking, 'Bo\'lim ochildi.');
-        return;
-      }
-
       const normalized = this.normalizeVoiceCommand(text);
       const localAnswer = this.buildLocalChatAnswer(normalized);
       if (localAnswer) {
@@ -2509,8 +2144,8 @@ ${body}`,
 
       const panelTarget = this.resolveLivePresentationTarget(normalized, 'user');
       if (panelTarget) {
-        this.openLivePresentationTarget(panelTarget, 'user');
-        this.renderAssistantMessage(thinking, `${panelTarget.label} paneli ochildi.`);
+        const item = this.getPanelViewerItem(panelTarget.collection, panelTarget.index);
+        this.renderAssistantMessage(thinking, item ? this.formatPanelAnswer([item]) : 'Bu ma\'lumot Oqqush Beton ma\'lumotlarida ko\'rsatilmagan');
         return;
       }
 
@@ -2565,26 +2200,19 @@ ${this.getAiContext()}`,
   private buildLocalChatAnswer(text: string) {
     const sectionTarget = this.resolveNavigationTarget(text);
     const panelTarget = this.resolvePanelKeywordTarget(text);
-    if (
-      sectionTarget?.type === 'section' &&
-      this.hasInfoIntent(text) &&
-      !panelTarget &&
-      !this.userAskedPanelOpen(text)
-    ) {
+    if (sectionTarget?.type === 'section' && !panelTarget) {
       return this.buildSectionInfoAnswer(sectionTarget.key);
     }
 
     if (panelTarget && (this.hasInfoIntent(text) || this.userAskedPanelOpen(text) || this.isExactPanelKeyword(text, panelTarget))) {
-      this.openLivePresentationTarget(panelTarget, 'user');
       const item = this.getPanelViewerItem(panelTarget.collection, panelTarget.index);
-      return item ? this.formatPanelAnswer([item]) : `${panelTarget.label} paneli ochildi.`;
+      return item ? this.formatPanelAnswer([item]) : 'Bu ma\'lumot Oqqush Beton ma\'lumotlarida ko\'rsatilmagan';
     }
 
     const fallbackPanel = this.resolveFallbackInfoPanel(text);
     if (fallbackPanel) {
-      this.openLivePresentationTarget(fallbackPanel, 'user');
       const item = this.getPanelViewerItem(fallbackPanel.collection, fallbackPanel.index);
-      return item ? this.formatPanelAnswer([item]) : `${fallbackPanel.label} paneli ochildi.`;
+      return item ? this.formatPanelAnswer([item]) : 'Bu ma\'lumot Oqqush Beton ma\'lumotlarida ko\'rsatilmagan';
     }
 
     if (!this.hasInfoIntent(text)) return null;

@@ -6,8 +6,6 @@ type VoiceAiCallbacks = {
   onStopIntent?: () => number | void;
   onGreetingDone?: () => void;
   onResponseDone?: () => void;
-  getToolDeclarations?: () => unknown[];
-  onToolCall?: (name: string, args: Record<string, any>) => Promise<Record<string, any> | void> | Record<string, any> | void;
   silenceThreshold?: number;
 };
 
@@ -118,16 +116,7 @@ const downsampleAudio = (input: Float32Array, inputRate: number) => {
 };
 
 const prepareAudio = (input: Float32Array, inputRate: number) => {
-  const audio = downsampleAudio(input, inputRate);
-  const rms = getRms(audio);
-  if (rms < 0.002 || rms > 0.06) return audio;
-
-  const gain = Math.min(2.6, Math.max(1, 0.03 / rms));
-  if (gain <= 1.05) return audio;
-
-  const boosted = new Float32Array(audio.length);
-  for (let i = 0; i < audio.length; i += 1) boosted[i] = Math.max(-1, Math.min(1, audio[i] * gain));
-  return boosted;
+  return downsampleAudio(input, inputRate);
 };
 
 const pcm16ToBase64 = (input: Float32Array) => {
@@ -357,14 +346,13 @@ export class VoiceAiAssistant {
 
     ws.onopen = () => {
       if (!this.isActive || startId !== this.startId || this.ws !== ws) return;
-      const toolDeclarations = this.callbacks.getToolDeclarations?.() || [];
       const setup: Record<string, any> = {
           model: this.modelPath(),
           generationConfig: {
             responseModalities: ['AUDIO'],
             speechConfig: {
               voiceConfig: {
-                prebuiltVoiceConfig: {voiceName: 'Puck'},
+                prebuiltVoiceConfig: {voiceName: 'Charon'},
               },
             },
           },
@@ -385,7 +373,6 @@ export class VoiceAiAssistant {
             parts: [{text: this.buildSystemInstruction()}],
           },
         };
-      if (toolDeclarations.length) setup.tools = [{functionDeclarations: toolDeclarations}];
       this.sendJson({setup});
     };
 
@@ -449,12 +436,6 @@ export class VoiceAiAssistant {
       return;
     }
 
-    const toolCall = message.toolCall || message.tool_call;
-    if (toolCall) {
-      await this.handleToolCall(toolCall);
-      return;
-    }
-
     const serverContent = message.serverContent || message.server_content;
     if (!serverContent) return;
 
@@ -508,43 +489,6 @@ export class VoiceAiAssistant {
         this.callbacks.onResponseDone?.();
       }
     }
-  }
-
-  private async handleToolCall(toolCall: any) {
-    const calls = toolCall.functionCalls || toolCall.function_calls || [];
-    const responses = [];
-
-    for (const call of calls) {
-      const name = call.name;
-      if (!name) continue;
-      const args = call.args || {};
-      let response: Record<string, any> = {result: 'ok'};
-
-      try {
-        response = {
-          ...response,
-          ...((await this.callbacks.onToolCall?.(name, args)) || {}),
-        };
-      } catch (error) {
-        response = {
-          result: 'error',
-          error: error instanceof Error ? error.message : 'Tool bajarilmadi',
-        };
-      }
-
-      responses.push({
-        id: call.id,
-        name,
-        response,
-      });
-    }
-
-    if (!responses.length) return;
-    this.sendJson({
-      toolResponse: {
-        functionResponses: responses,
-      },
-    });
   }
 
   private async startMicrophoneStream() {
@@ -1086,7 +1030,7 @@ export class VoiceAiAssistant {
     if (this.isAudioPlaying()) this.stopQueuedAudio();
 
     if (this.onVoiceCommand?.(text)) {
-      this.setLiveState('listening', 'Bo\'lim ochildi. Tinglayapman...');
+      this.setLiveState('listening', 'Ma\'lumot tayyorlanmoqda...');
     }
     this.callbacks.onUserText?.(text);
   }
@@ -1186,25 +1130,15 @@ export class VoiceAiAssistant {
 
   private buildSystemInstruction() {
     return `Siz Oqqush Beton kompaniyasining ovozli virtual yordamchisisiz.
+ENG MUHIM YANGI QOIDA:
+Siz oddiy ma'lumot beruvchi yordamchisiz. Foydalanuvchi bo'lim nomini aytsa shu bo'lim haqida, panel yoki mahsulot nomini aytsa faqat o'sha panel haqida ma'lumot bering.
+Hech qachon saytni scroll qilmang, panel ochmang, modal ochmang yoki bo'lim ochmang. Functionlar faqat ma'lumot olish uchun ishlatiladi; function nomida "ochish" bo'lsa ham ekranda hech narsa ochilmaydi.
+Function response ichidagi "content" maydonidagi matnni o'qing, boshqa narsa qo'shmang.
 
-QOIDA 1 — FAQAT FUNCTION CHAQIRISH:
-Foydalanuvchi biror bo'lim yoki panel haqida so'rasa — DARHOL tegishli functionni chaqir.
-Hech qachon functiondan oldin yoki o'rniga matnli javob berma.
-Function response ichidagi "content" maydonidagi matnni o'qi, boshqa narsa qo'shma.
-Kalit so'z aniq mos kelmasa, boshqa bo'lim yoki panelni taxmin qilib ochma.
-
-QOIDA 2 — PANELLAR TARTIBI:
-- Avval bolim_ochish → keyin panel_och
-- Bir panel ma'lumotini to'liq o'qi → keyin panel_yop → keyin keyingi panelga o't
-- panel_yop chaqirmasdan boshqa panel_ochga o'tma
-
-QOIDA 3 — MATN O'QISH TARTIBI:
-panel_och response ichida:
-  content: "PANEL: <nomi>\nma'lumot 1\nma'lumot 2..."
-Bu contentni aynan shu tartibda o'qi:
-  1. Avval "PANEL: <nomi>" qismini ayt (panel nomini to'liq ayt)
-  2. Keyin ma'lumotlarni ketma-ket ayt
-  3. Tugagach panel_yop chaqir
+QOIDA 1 - MA'LUMOTNI O'QISH:
+Panel yoki bo'lim haqida so'ralganda contentni tartib bilan o'qi.
+Bo'lim haqida so'ralsa, shu bo'limdagi mavjud ma'lumotlarni ayt.
+Panel haqida so'ralsa, faqat o'sha panel ma'lumotini ayt.
 
 QOIDA 4 — CHALKASHMASLIK:
 - bo'lim va panel — ikki xil narsa
