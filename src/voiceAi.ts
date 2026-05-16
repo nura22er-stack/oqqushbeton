@@ -166,7 +166,6 @@ export class VoiceAiAssistant {
   private sourceNode: MediaStreamAudioSourceNode | null = null;
   private processorNode: ScriptProcessorNode | null = null;
   private workletNode: AudioWorkletNode | null = null;
-  private compressorNode: DynamicsCompressorNode | null = null;
   private inputGainNode: GainNode | null = null;
   private muteNode: GainNode | null = null;
   private micBuffer: number[] = [];
@@ -495,13 +494,6 @@ export class VoiceAiAssistant {
     if (!this.inputContext || !this.mediaStream || this.processorNode || this.workletNode || !this.setupComplete) return;
 
     this.sourceNode = this.inputContext.createMediaStreamSource(this.mediaStream);
-    this.compressorNode = this.inputContext.createDynamicsCompressor();
-    this.compressorNode.threshold.value = -20;
-    this.compressorNode.knee.value = 0;
-    this.compressorNode.ratio.value = 20;
-    this.compressorNode.attack.value = 0.001;
-    this.compressorNode.release.value = 0.1;
-
     this.inputGainNode = this.inputContext.createGain();
     this.inputGainNode.gain.value = 1;
     this.processorNode = this.inputContext.createScriptProcessor(INPUT_BUFFER_SIZE, 1, 1);
@@ -520,8 +512,7 @@ export class VoiceAiAssistant {
         this.handleInputSamples(event.data as Float32Array, this.inputContext.sampleRate);
       };
 
-      this.sourceNode.connect(this.compressorNode);
-      this.compressorNode.connect(this.inputGainNode);
+      this.sourceNode.connect(this.inputGainNode);
       this.inputGainNode.connect(this.workletNode);
       this.workletNode.connect(this.muteNode);
       this.muteNode.connect(this.inputContext.destination);
@@ -535,8 +526,7 @@ export class VoiceAiAssistant {
       this.handleInputSamples(event.inputBuffer.getChannelData(0), this.inputContext.sampleRate);
     };
 
-    this.sourceNode.connect(this.compressorNode);
-    this.compressorNode.connect(this.inputGainNode);
+    this.sourceNode.connect(this.inputGainNode);
     this.inputGainNode.connect(this.processorNode);
     this.processorNode.connect(this.muteNode);
     this.muteNode.connect(this.inputContext.destination);
@@ -621,12 +611,10 @@ export class VoiceAiAssistant {
     }
     this.workletNode?.port.close();
     this.workletNode?.disconnect();
-    this.compressorNode?.disconnect();
     this.inputGainNode?.disconnect();
     this.muteNode?.disconnect();
     this.sourceNode?.disconnect();
     this.workletNode = null;
-    this.compressorNode = null;
     this.inputGainNode = null;
     this.muteNode = null;
     this.sourceNode = null;

@@ -163,9 +163,6 @@ class App {
   private aiChatGreeted = false;
   private aiButtonBound = false;
   private aiContextCache: { full: string; live: string } | null = null;
-  private lastVoiceCommand = '';
-  private lastVoiceCommandAt = 0;
-  private lastChatNavigationTarget: NavigationTarget | null = null;
   private bodyScrollLockCount = 0;
   private mediaUrlCache = new Map<string, string>();
   private projectVideoObserver: IntersectionObserver | null = null;
@@ -173,25 +170,6 @@ class App {
   private panelViewerCollection: PanelCollection | null = null;
   private panelViewerIndex = 0;
   private panelViewerOpen = false;
-  private livePresentationKey = '';
-  private livePresentationCloseTimer: number | null = null;
-  private livePresentationSwitchTimer: number | null = null;
-  private liveReadingFallbackTimer: number | null = null;
-  private singlePanelCloseFallbackTimer: number | null = null;
-  private livePresentationReady = false;
-  private liveOpenedPanel = false;
-  private liveReadingScriptKey = '';
-  private liveReadingScriptAt = 0;
-  private liveReadingMode = false;
-  private liveReadingQueue: Array<{collection: PanelCollection; index: number; sectionId: string; label: string}> = [];
-  private liveReadingQueueIndex = 0;
-  private liveAssistantTextWindow = '';
-  private liveToolActivePanel = '';
-  private lastLiveUserText = '';
-  private lastLiveUserAt = 0;
-  private lastLiveSectionKey = '';
-  private lastLiveKeywordAction = '';
-  private lastLiveKeywordActionAt = 0;
   private siteSyncTimer: number | null = null;
   private siteSyncInFlight = false;
   private siteSyncReady = false;
@@ -559,21 +537,6 @@ class App {
         assistantBtn?.classList.toggle('ai-ringing', status === 'connecting');
         statusBox?.classList.toggle('ai-call-waiting', status === 'connecting');
       } else if (status === 'idle') {
-        this.livePresentationReady = false;
-        if (this.livePresentationCloseTimer) window.clearTimeout(this.livePresentationCloseTimer);
-        if (this.livePresentationSwitchTimer) window.clearTimeout(this.livePresentationSwitchTimer);
-        if (this.liveReadingFallbackTimer) window.clearTimeout(this.liveReadingFallbackTimer);
-        this.livePresentationCloseTimer = null;
-        this.livePresentationSwitchTimer = null;
-        this.liveReadingFallbackTimer = null;
-        this.livePresentationKey = '';
-        this.liveOpenedPanel = false;
-        this.liveReadingScriptKey = '';
-        this.liveReadingScriptAt = 0;
-        this.liveReadingMode = false;
-        this.liveReadingQueue = [];
-        this.liveReadingQueueIndex = 0;
-        this.liveAssistantTextWindow = '';
         statusBox?.classList.add('scale-90', 'opacity-0', 'translate-y-8');
         statusBox?.classList.remove('scale-100', 'opacity-100', 'translate-y-0');
         setTimeout(() => statusBox?.classList.add('hidden'), 700);
@@ -610,16 +573,14 @@ class App {
       undefined,
       {
         onUserText: (text) => {
-          this.lastLiveUserText = this.normalizeVoiceCommand(text);
-          this.lastLiveUserAt = Date.now();
-          const handledByKeywords = this.handleLiveKeywordPipeline(text);
-          if (!handledByKeywords) this.voiceAi?.sendTextInstruction('Bu buyruq uchun sayt ichida aniq bo\'lim yoki panel topilmadi. Faqat Oqqush Beton saytidagi bo\'lim yoki panel nomini ayting.');
+          const answer = this.buildLiveVoiceAnswer(text);
+          this.voiceAi?.sendTextInstruction(`Aynan quyidagi Oqqush Beton ma'lumotini erkak ovozda, qisqa va ravon o'qing.
+Saytni boshqarmang, bo'lim ochmang, panel ochmang, scroll qilmang.
+Matndan tashqariga chiqmang:
+
+${answer}`);
         },
         onStopIntent: () => this.handleLiveStopIntent(),
-        onGreetingDone: () => {
-          this.livePresentationReady = true;
-        },
-        onResponseDone: () => this.finishLivePresentation(),
         silenceThreshold: 0.0085,
       },
     );
@@ -636,16 +597,6 @@ class App {
 
     document.getElementById('ai-assistant-btn')?.addEventListener('click', () => {
       this.closeAiChat();
-      if (!this.voiceAi.active) {
-        this.livePresentationReady = false;
-        this.livePresentationKey = '';
-        this.liveOpenedPanel = false;
-        this.liveReadingScriptKey = '';
-        this.liveReadingScriptAt = 0;
-        this.liveReadingMode = false;
-        this.liveAssistantTextWindow = '';
-        if (this.panelViewerOpen) this.closePanelViewer();
-      }
       const wasActive = this.voiceAi.active;
       this.voiceAi.toggle(this.getAiContext('live'));
       if (wasActive) this.resetLiveButtonUi();
@@ -653,24 +604,23 @@ class App {
   }
 
   private handleLiveStopIntent() {
-    if (this.livePresentationCloseTimer) window.clearTimeout(this.livePresentationCloseTimer);
-    if (this.livePresentationSwitchTimer) window.clearTimeout(this.livePresentationSwitchTimer);
-    if (this.liveReadingFallbackTimer) window.clearTimeout(this.liveReadingFallbackTimer);
-    if (this.singlePanelCloseFallbackTimer) window.clearTimeout(this.singlePanelCloseFallbackTimer);
-    this.livePresentationCloseTimer = null;
-    this.livePresentationSwitchTimer = null;
-    this.liveReadingFallbackTimer = null;
-    this.singlePanelCloseFallbackTimer = null;
-    this.livePresentationKey = '';
-    this.liveOpenedPanel = false;
-    this.liveReadingMode = false;
-    this.liveReadingQueue = [];
-    this.liveReadingQueueIndex = 0;
-    this.liveAssistantTextWindow = '';
+    return 0;
+  }
 
-    const wasOpen = this.panelViewerOpen;
-    this.closeLiveActivePanel();
-    return wasOpen ? 340 : 0;
+  private buildLiveVoiceAnswer(text: string) {
+    const normalized = this.normalizeVoiceCommand(text);
+    const localAnswer = this.buildLocalChatAnswer(normalized);
+    return this.cleanAiSpeechText(localAnswer || 'Bu ma\'lumot Oqqush Beton ma\'lumotlarida ko\'rsatilmagan');
+  }
+
+  private cleanAiSpeechText(text: string) {
+    return text
+      .replace(/\*\*/g, '')
+      .replace(/^\d+\.\s*/gm, '')
+      .replace(/\s+-\s+/g, '. ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .slice(0, 1600);
   }
 
   private getAiContext(mode: 'full' | 'live' = 'full') {
@@ -1094,119 +1044,6 @@ Foydalanuvchi: ${userInput}`;
     document.getElementById('ai-pulse')?.classList.add('scale-100', 'opacity-0');
   }
 
-  private handleLiveNavigationCommand(text: string) {
-    void text;
-    return false;
-  }
-
-  private handleLiveKeywordPipeline(text: string) {
-    const normalized = this.normalizeVoiceCommand(text);
-    if (!normalized) return false;
-
-    const isNavigation = this.hasNavigationIntent(normalized);
-    const isInfo = this.hasInfoIntent(normalized);
-    const targetSection = this.resolveNavigationTarget(normalized);
-    const panelTarget = this.resolvePanelKeywordTarget(normalized);
-    const exactPanelRequest = panelTarget ? this.isExactPanelKeyword(normalized, panelTarget) : false;
-    const explicitPanelOpen = this.userAskedPanelOpen(normalized);
-    this.livePresentationReady = true;
-
-    if (isNavigation && !isInfo) {
-      if (!targetSection || targetSection.type !== 'section') return false;
-      const script = this.buildLiveReadingScriptForSectionKey(targetSection.key);
-      if (!script) return false;
-      this.runLiveKeywordAction(`section:${targetSection.key}`, () => {
-        this.lastLiveSectionKey = targetSection.key;
-        this.startLiveReadingScript(script);
-      });
-      return true;
-    }
-
-    if (targetSection?.type === 'section' && !isInfo && !panelTarget) {
-      const script = this.buildLiveReadingScriptForSectionKey(targetSection.key);
-      if (!script) return false;
-      this.runLiveKeywordAction(`section:${targetSection.key}`, () => {
-        this.lastLiveSectionKey = targetSection.key;
-        this.startLiveReadingScript(script);
-      });
-      return true;
-    }
-
-    if (
-      targetSection?.type === 'section' &&
-      panelTarget &&
-      !isInfo &&
-      !explicitPanelOpen &&
-      !exactPanelRequest
-    ) {
-      const script = this.buildLiveReadingScriptForSectionKey(targetSection.key);
-      if (!script) return false;
-      this.runLiveKeywordAction(`section:${targetSection.key}`, () => {
-        this.lastLiveSectionKey = targetSection.key;
-        this.startLiveReadingScript(script);
-      });
-      return true;
-    }
-
-    if (panelTarget && (isInfo || explicitPanelOpen || exactPanelRequest)) {
-      if (
-        this.livePresentationKey &&
-        (this.singlePanelCloseFallbackTimer !== null || this.liveReadingMode)
-      ) return true;
-
-      this.runLiveKeywordAction(`panel:${panelTarget.collection}:${panelTarget.index}`, () => {
-        this.readSingleLivePanel(panelTarget);
-      });
-      return true;
-    }
-
-    if (targetSection?.type === 'section' && isInfo) {
-      const script = this.buildLiveReadingScriptForSectionKey(targetSection.key);
-      if (script) {
-        this.startLiveReadingScript(script);
-        return true;
-      }
-    }
-
-    const fallbackPanel = this.resolveFallbackInfoPanel(normalized);
-    if (fallbackPanel) {
-      this.runLiveKeywordAction(`panel:${fallbackPanel.collection}:${fallbackPanel.index}`, () => {
-        this.readSingleLivePanel(fallbackPanel);
-      });
-      return true;
-    }
-
-    if (isInfo) {
-      const script = this.resolveLiveReadingScript(normalized);
-      if (script) {
-        this.startLiveReadingScript(script);
-        return true;
-      }
-    }
-
-    return false;
-  }
-
-  private startLiveReadingScript(script: {key: string; text: string; targets: Array<{collection: PanelCollection; index: number; sectionId: string; label: string}>}) {
-    const now = Date.now();
-    if (script.key === this.liveReadingScriptKey && now - this.liveReadingScriptAt < 8000) return;
-    this.liveReadingScriptKey = script.key;
-    this.liveReadingScriptAt = now;
-    this.liveReadingMode = true;
-    this.liveAssistantTextWindow = '';
-    this.liveReadingQueue = script.targets || [];
-    this.liveReadingQueueIndex = 0;
-    this.voiceAi?.sendTextInstruction(script.text);
-  }
-
-  private runLiveKeywordAction(key: string, action: () => void) {
-    const now = Date.now();
-    if (key === this.lastLiveKeywordAction && now - this.lastLiveKeywordActionAt < 250) return;
-    this.lastLiveKeywordAction = key;
-    this.lastLiveKeywordActionAt = now;
-    action();
-  }
-
   private userAskedPanelOpen(text: string) {
     return ['panel och', 'panelni och', 'ochib ber', 'korsat', 'ko rsat'].some(phrase => text.includes(phrase));
   }
@@ -1215,8 +1052,8 @@ Foydalanuvchi: ${userInput}`;
     if (!this.hasInfoIntent(text)) return null;
     if (!this.isVagueSectionCommand(text) && !this.userAskedPanelOpen(text) && !text.includes('shu haqda') && !text.includes('u haqda')) return null;
     const sectionTarget = this.resolveNavigationTarget(text);
-    const key = sectionTarget?.type === 'section' ? sectionTarget.key : this.lastLiveSectionKey;
-    if (!key && !this.userAskedPanelOpen(text)) return null;
+    const key = sectionTarget?.type === 'section' ? sectionTarget.key : '';
+    if (!key) return null;
     if (!key) return null;
     return this.resolveFirstReadingTarget(`section-${key}`)
       || this.resolveFirstReadingTarget(key)
@@ -1234,52 +1071,6 @@ Foydalanuvchi: ${userInput}`;
       const normalizedKeyword = this.normalizeVoiceCommand(keyword);
       return normalizedKeyword.length >= 4 && this.findKeywordPosition(text, normalizedKeyword) >= 0;
     });
-  }
-
-  private readSingleLivePanel(target: {collection: PanelCollection; index: number; label: string}) {
-    const item = this.getPanelViewerItem(target.collection, target.index);
-    if (!item) return;
-    this.liveReadingMode = false;
-    this.liveAssistantTextWindow = '';
-    if (this.singlePanelCloseFallbackTimer) window.clearTimeout(this.singlePanelCloseFallbackTimer);
-    this.singlePanelCloseFallbackTimer = null;
-    const details = [
-      ...(item.description || '').split(/\n+/).map(line => line.trim()).filter(Boolean),
-      ...(item.meta ? [item.meta] : []),
-    ];
-    const body = [
-      `PANEL: ${item.title}`,
-      ...details.map((line, index) => `MA'LUMOT ${index + 1}: ${line}`),
-    ].join('\n');
-    this.voiceAi?.sendTextInstruction(`Faqat bitta panelni o'qing: quyidagi sayt paneli ma'lumotidan tashqariga chiqmang.
-Hech narsa qo'shmang, boshqa panel nomini aytmang va boshqa panelga o'tmang.
-Avval panel nomini ayting, keyin ma'lumotlarni tartib bilan o'qing.
-O'qib bo'lgach keyingi foydalanuvchi savolini kuting. Hech qanday panel yoki bo'lim ochmang.
-
-${body}`);
-  }
-
-  private isAssistantPanelSignal(text: string) {
-    const normalized = this.normalizeVoiceCommand(text);
-    return normalized.startsWith('panel ');
-  }
-
-  private scheduleLiveReadingFallback(delay: number) {
-    void delay;
-  }
-
-  private estimatePanelReadDelay(label: string) {
-    const current = this.liveReadingQueue.find(item => item.label === label);
-    if (!current) return 6500;
-    const items: Record<PanelCollection, PanelViewerItem[]> = {
-      products: this.products.map(item => ({title: item.name, image: item.image, description: item.description})),
-      'product-panels': this.getProductPanelViewerItems(),
-      transport: this.transport.map(item => ({title: item.name, image: item.image, description: item.specs})),
-      projects: this.projects.map(item => ({title: item.name, image: item.image, description: `${item.location}\n${item.year}`})),
-      laboratory: this.getLaboratoryViewerItems(),
-    };
-    const text = items[current.collection]?.[current.index]?.description || '';
-    return Math.min(13000, Math.max(4500, text.length * 70));
   }
 
   private resolveFirstReadingTarget(key: string): {collection: PanelCollection; index: number; sectionId: string; label: string} | null {
@@ -1309,107 +1100,6 @@ ${body}`);
     return null;
   }
 
-  private resolveLiveReadingScript(text: string): {key: string; text: string; targets: Array<{collection: PanelCollection; index: number; sectionId: string; label: string}>} | null {
-    if (!this.hasInfoIntent(text)) return null;
-
-    if (this.isAllInfoCommand(text)) {
-      return this.buildLiveReadingScript('all-panels', this.getAllReadablePanels());
-    }
-
-    const vagueInfo = this.isVagueInfoCommand(text);
-    if (vagueInfo && this.lastLiveSectionKey) {
-      const script = this.buildLiveReadingScriptForSectionKey(this.lastLiveSectionKey);
-      if (script) return script;
-    }
-
-    const transportAlias = this.resolveTransportAliasTarget(text);
-    if (transportAlias && !['texnika', 'transport'].some(word => text.includes(word))) {
-      return this.buildLiveReadingScript(
-        `transport-${transportAlias.index}`,
-        [this.panelFromTransport(this.transport[transportAlias.index])],
-      );
-    }
-
-    if (['texnika', 'transport', 'ijara transport'].some(word => text.includes(word))) {
-      return this.buildLiveReadingScript('transport-all', this.transport.map(item => this.panelFromTransport(item)));
-    }
-
-    const productPanelMatch = this.presentationByPanelAlias(this.resolveSpecificProductPanelId(text) || '');
-    if (productPanelMatch && !['mahsulot', 'maxsulot', 'beton', 'qorishma', 'plita', 'plitalar', 'gisht'].some(word => text.includes(word))) {
-      const panel = this.productSections.flatMap(section => section.panels || [])[productPanelMatch.index];
-      return this.buildLiveReadingScript(`product-panel-${panel.id}`, [this.panelFromProductPanel(panel)]);
-    }
-
-    if (['gisht', 'gish'].some(word => text.includes(word))) {
-      const section = this.productSections.find(item => item.id === 'gisht');
-      return this.buildLiveReadingScript('section-gisht', (section?.panels || []).map(panel => this.panelFromProductPanel(panel)));
-    }
-
-    if (['plita', 'plitalar'].some(word => text.includes(word))) {
-      const section = this.productSections.find(item => item.id === 'plitalar');
-      return this.buildLiveReadingScript('section-plitalar', (section?.panels || []).map(panel => this.panelFromProductPanel(panel)));
-    }
-
-    if (['beton', 'qorishma', 'marka', 'm100', 'm150', 'm200', 'm250'].some(word => text.includes(word))) {
-      const section = this.productSections.find(item => item.id === 'concreteMix');
-      return this.buildLiveReadingScript('section-concrete', (section?.panels || []).map(panel => this.panelFromProductPanel(panel)));
-    }
-
-    if (['mahsulot', 'maxsulot', 'shagal', 'shag al', 'sheben', 'pesok', 'qum'].some(word => text.includes(word))) {
-      return this.buildLiveReadingScript('products-all', this.getProductReadablePanels());
-    }
-
-    if (['laboratoriya', 'labaratoriya'].some(word => text.includes(word))) {
-      return this.buildLiveReadingScript('laboratory-all', this.getLaboratoryViewerItems());
-    }
-
-    if (['loyiha', 'loyihalar', 'bajarilgan ish'].some(word => text.includes(word))) {
-      return this.buildLiveReadingScript('projects-all', this.projects.map(item => ({
-        title: item.name,
-        description: `${item.location}\n${item.year}`,
-        eyebrow: 'Bajarilgan ish',
-      })));
-    }
-
-    return null;
-  }
-
-  private isAllInfoCommand(text: string) {
-    return [
-      'hammasi haqida',
-      'hammasi haqida malumot',
-      'hammasi haqida ma lumot',
-      'hammasi haqida malumot ber',
-      'hamma haqida',
-      'hamma malumot',
-      'barchasi haqida',
-      'barcha malumot',
-      'hammasini tanishtir',
-      'barchasini tanishtir',
-      'hammasini ayt',
-      'hammasini oqi',
-      'hamma panellar',
-      'barcha panellar',
-    ].some(phrase => text.includes(phrase));
-  }
-
-  private getAllReadablePanels(): Pick<PanelViewerItem, 'title' | 'description' | 'meta' | 'eyebrow'>[] {
-    return [
-      ...this.getProductReadablePanels(),
-      ...this.transport.map(item => this.panelFromTransport(item)),
-      ...this.getLaboratoryViewerItems().map(item => ({
-        title: item.title,
-        description: item.description,
-        eyebrow: item.eyebrow,
-      })),
-      ...this.projects.map(item => ({
-        title: item.name,
-        description: `${item.location}\n${item.year}`,
-        eyebrow: 'Bajarilgan ish',
-      })),
-    ];
-  }
-
   private getProductReadablePanels(): Pick<PanelViewerItem, 'title' | 'description' | 'meta' | 'eyebrow'>[] {
     return [
       ...this.products.map(item => ({
@@ -1434,110 +1124,6 @@ ${body}`);
     ].some(phrase => text.includes(phrase));
   }
 
-  private buildLiveReadingScriptForSectionKey(key: string) {
-    if (['transport', 'tech', 'texnika'].includes(key)) {
-      return this.buildLiveReadingScript('transport-all', this.transport.map(item => this.panelFromTransport(item)));
-    }
-    if (['products', 'mahsulotlar'].includes(key)) {
-      return this.buildLiveReadingScript('products-all', this.getProductReadablePanels());
-    }
-    if (key === 'plitalar') {
-      const section = this.productSections.find(item => item.id === 'plitalar');
-      return this.buildLiveReadingScript('section-plitalar', (section?.panels || []).map(panel => this.panelFromProductPanel(panel)));
-    }
-    if (key === 'gisht') {
-      const section = this.productSections.find(item => item.id === 'gisht');
-      return this.buildLiveReadingScript('section-gisht', (section?.panels || []).map(panel => this.panelFromProductPanel(panel)));
-    }
-    if (key === 'concrete-mix') {
-      const section = this.productSections.find(item => item.id === 'concreteMix');
-      return this.buildLiveReadingScript('section-concrete', (section?.panels || []).map(panel => this.panelFromProductPanel(panel)));
-    }
-    if (key === 'laboratory') return this.buildLiveReadingScript('laboratory-all', this.getLaboratoryViewerItems());
-    if (key === 'projects') {
-      return this.buildLiveReadingScript('projects-all', this.projects.map(item => ({
-        title: item.name,
-        description: `${item.location}\n${item.year}`,
-        eyebrow: 'Bajarilgan ish',
-      })));
-    }
-    if (key === 'services') {
-      return this.buildLiveReadingScript('services-all', this.services.map(item => ({
-        title: item.name,
-        description: item.description,
-        eyebrow: 'Xizmat',
-      })));
-    }
-    if (key === 'footer') {
-      return this.buildLiveReadingScript('contact-info', [
-        {title: 'Telefonlar', description: this.social.ph || 'ko\'rsatilmagan', eyebrow: 'Aloqa'},
-        {title: 'Telegram', description: this.social.tg || 'ko\'rsatilmagan', eyebrow: 'Aloqa'},
-        {title: 'Instagram', description: this.social.ig || 'ko\'rsatilmagan', eyebrow: 'Aloqa'},
-      ]);
-    }
-    if (key === 'about') {
-      return this.buildLiveReadingScript('about-info', [
-        {title: 'OQQUSH BETON', description: 'Zamonaviy qurilish kompaniyasi, ishonch, tajriba va sifatga sodiqlik tamoyillari asosida ishlaydi.'},
-        {title: 'ISHLAB CHIQARISH', description: 'Zamonaviy uskunalar va qat\'iy laboratoriya nazorati ostida olib boriladi.'},
-        {title: 'TEXNIKA VA QUVVAT', description: 'Yirik hajmdagi buyurtmalarni qisqa muddatda, sifatni pasaytirmasdan bajaradi.'},
-      ]);
-    }
-    return null;
-  }
-
-  private buildLiveReadingScript(key: string, items: Pick<PanelViewerItem, 'title' | 'description' | 'meta' | 'eyebrow'>[]) {
-    const validItems = items.filter(item => item.title || item.description || item.meta);
-    if (!validItems.length) return null;
-    const targets = this.getReadingTargetsForItems(validItems);
-
-    const body = validItems.map((item, index) => {
-      const details = [
-        ...(item.description || '')
-          .split(/\n+/)
-          .map(line => line.trim())
-          .filter(Boolean),
-        ...(item.meta ? [item.meta] : []),
-      ];
-
-      return [
-        `${index + 1}. PANEL: ${item.title}`,
-        ...details.map((line, detailIndex) => `MA'LUMOT ${detailIndex + 1}: ${line}`),
-      ].filter(Boolean).join('\n');
-    }).join('\n\n');
-
-    return {
-      key,
-      targets,
-      text: `Faqat quyidagi Oqqush Beton sayt panel ma'lumotlarini o'qing.
-Hech qanday yangi ma'lumot, narx, muddat yoki taxmin qo'shmang.
-Har bir panelni aynan shu tartibda o'qing: avval "PANEL: <nomi>" deb panel nomini to'liq ayting, keyin shu panel ostidagi "MA'LUMOT" qatorlarini bir boshidan o'qing.
-Bir panel ma'lumotlari tugamaguncha keyingi panelga o'tmang.
-Keyingi panelga o'tganda yana avval "PANEL: <nomi>" deb ayting.
-Hech qanday panel, modal yoki bo'lim ochmang.
-Matndan tashqariga chiqmang va berilgan qatorlarni tashlab ketmang.
-
-${body}`,
-    };
-  }
-
-  private getReadingTargetsForItems(items: Pick<PanelViewerItem, 'title'>[]) {
-    const entries = this.getAllPanelKeywordEntries();
-    return items
-      .map(item => {
-        const title = this.normalizeVoiceCommand(item.title || '');
-        const entry = entries.find(candidate => this.normalizeVoiceCommand(candidate.label) === title);
-        return entry
-          ? {
-            collection: entry.collection,
-            index: entry.index,
-            sectionId: entry.sectionId,
-            label: entry.label,
-          }
-          : null;
-      })
-      .filter((item): item is {collection: PanelCollection; index: number; sectionId: string; label: string} => Boolean(item));
-  }
-
   private panelFromTransport(item: Transport) {
     return {
       title: item.name,
@@ -1545,50 +1131,6 @@ ${body}`,
       meta: item.available ? 'Mavjud' : 'Mavjud emas',
       eyebrow: 'Texnika',
     };
-  }
-
-  private panelFromProductPanel(panel: ProductPanel) {
-    return {
-      title: panel.name,
-      description: panel.description,
-      meta: panel.meta,
-      eyebrow: 'Mahsulot paneli',
-    };
-  }
-
-  private resolveSpecificProductPanelId(text: string) {
-    const panels = this.productSections.flatMap(section => section.panels || []);
-    const found = panels.find(panel => {
-      const name = this.normalizeVoiceCommand(panel.name);
-      return name && text.includes(name);
-    });
-    return found?.id || '';
-  }
-
-  private finishLivePresentation() {
-    if (!this.liveOpenedPanel) return;
-    if (this.livePresentationCloseTimer) window.clearTimeout(this.livePresentationCloseTimer);
-    if (this.singlePanelCloseFallbackTimer) window.clearTimeout(this.singlePanelCloseFallbackTimer);
-    this.singlePanelCloseFallbackTimer = null;
-    this.livePresentationCloseTimer = window.setTimeout(() => {
-      this.closeLiveActivePanel();
-      this.liveOpenedPanel = false;
-      this.livePresentationKey = '';
-      this.liveAssistantTextWindow = '';
-      this.liveReadingMode = false;
-    }, 450);
-  }
-
-  private closeLiveActivePanel() {
-    if (this.liveToolActivePanel) {
-      document.querySelector<HTMLElement>(`[data-panel="${this.cssEscape(this.liveToolActivePanel)}"]`)?.classList.remove('ai-opened');
-      this.liveToolActivePanel = '';
-    }
-    document.querySelectorAll<HTMLElement>('[data-panel].ai-opened').forEach(panel => {
-      panel.classList.remove('ai-opened');
-    });
-    if (this.panelViewerOpen) this.closePanelViewer();
-    this.liveOpenedPanel = false;
   }
 
   private resolveLivePresentationTarget(text: string, source: 'user' | 'assistant'): {collection: PanelCollection; index: number; sectionId: string; label: string} | null {
@@ -2075,53 +1617,8 @@ ${body}`,
     return {type: 'admin', tab: admin?.tab, label: admin?.label || 'Admin panel', key: `admin-${admin?.tab || 'login'}`};
   }
 
-  private handleChatNavigationCommand(text: string) {
-    const normalized = this.normalizeVoiceCommand(text);
-    const directTarget = this.resolveNavigationTarget(normalized);
-    if (directTarget) this.lastChatNavigationTarget = directTarget;
-
-    if (!this.hasNavigationIntent(normalized) || this.hasInfoIntent(normalized)) return false;
-
-    const target = directTarget || (this.isVagueSectionCommand(normalized) ? this.lastChatNavigationTarget : null);
-    if (!target) return false;
-
-    if (target.type === 'section') {
-      this.scrollToSection(target.id, target.label);
-      return true;
-    }
-
-    this.openAdminTarget(target.tab, target.label);
-    return true;
-  }
-
-  private scrollToSection(id: string, label: string, behavior: ScrollBehavior = 'smooth', showToast = true) {
-    const section = document.getElementById(id);
-    if (!section) return;
-
-    this.closeMobileMenu();
-    this.closeAiChat();
-    const top = section.getBoundingClientRect().top + window.scrollY - 72;
-    const finalBehavior = this.isMobileViewport() ? 'auto' : behavior;
-    window.scrollTo({top: Math.max(0, top), behavior: finalBehavior});
-    if (showToast) this.toast(`${label} ochildi`);
-  }
-
   private isMobileViewport() {
     return window.matchMedia('(max-width: 767px)').matches;
-  }
-
-  private openAdminTarget(tab: string | undefined, label: string) {
-    const sidebar = document.getElementById('admin-sidebar');
-    const sidebarOpen = sidebar && !sidebar.classList.contains('translate-x-full');
-
-    if (!sidebarOpen) {
-      this.openAdminModal();
-      this.toast('Admin panel uchun parol kiriting');
-      return;
-    }
-
-    if (tab) this.switchTab(tab);
-    this.toast(`${label} ochildi`);
   }
 
   private async sendAiChatMessage() {
