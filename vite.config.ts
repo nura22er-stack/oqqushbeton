@@ -17,6 +17,10 @@ export default defineConfig(() => {
       hmr: process.env.DISABLE_HMR !== 'true',
       proxy: {
         '/api': 'http://127.0.0.1:3050',
+        '/gemini-live': {
+          target: 'ws://127.0.0.1:3060',
+          ws: true,
+        },
       },
     },
   };

@@ -430,16 +430,22 @@
 
   <script>
     // CONFIG - change these values:
-    // GEMINI_API_KEY = "your key here"
+    // GEMINI_API_KEY = "your key here" for local direct testing only.
+    // GEMINI_PROXY_URL keeps the API key on your server in production.
     // COMPANY_INFO = { update company details here }
     //
     // Production note: putting a permanent API key in browser JavaScript exposes it to users.
     // For a real public website, use a backend endpoint that returns short-lived Gemini ephemeral tokens.
     const CONFIG = {
       GEMINI_API_KEY: "YOUR_GEMINI_API_KEY",
-      GEMINI_MODEL: "gemini-2.0-flash-live-001",
+      GEMINI_PROXY_URL: location.protocol.startsWith("http")
+        ? `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/gemini-live`
+        : "",
+      GEMINI_MODEL: "gemini-2.5-flash-native-audio-latest",
       GEMINI_VOICE: "Charon", // Male options: "Charon" or "Fenrir"
-      LANGUAGE_CODE: "uz-UZ",
+      // Native-audio Live models currently reject uz-UZ in speechConfig.
+      // Uzbek is enforced through the system prompt instead.
+      LANGUAGE_CODE: "",
       INPUT_SAMPLE_RATE: 16000,
       OUTPUT_SAMPLE_RATE: 24000,
       COMPANY_INFO: {
@@ -559,7 +565,8 @@ Har doim muloyim, professional va qisqa javob bering. Uzbek tilida gaplashing.
     }
 
     async function connectGeminiLive() {
-      if (!CONFIG.GEMINI_API_KEY || CONFIG.GEMINI_API_KEY === "YOUR_GEMINI_API_KEY") {
+      const useDirectGeminiKey = !CONFIG.GEMINI_PROXY_URL;
+      if (useDirectGeminiKey && (!CONFIG.GEMINI_API_KEY || CONFIG.GEMINI_API_KEY === "YOUR_GEMINI_API_KEY")) {
         throw new Error("CONFIG ichiga Gemini API key qo'ying: YOUR_GEMINI_API_KEY.");
       }
 
@@ -576,7 +583,8 @@ Har doim muloyim, professional va qisqa javob bering. Uzbek tilida gaplashing.
       setupMicPcmStreamer();
 
       const endpoint = "wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent";
-      ws = new WebSocket(`${endpoint}?key=${encodeURIComponent(CONFIG.GEMINI_API_KEY)}`);
+      const websocketUrl = CONFIG.GEMINI_PROXY_URL || `${endpoint}?key=${encodeURIComponent(CONFIG.GEMINI_API_KEY)}`;
+      ws = new WebSocket(websocketUrl);
       ws.onopen = sendSetupMessage;
       ws.onmessage = handleGeminiMessage;
       ws.onerror = () => {
@@ -589,6 +597,15 @@ Har doim muloyim, professional va qisqa javob bering. Uzbek tilida gaplashing.
     }
 
     function sendSetupMessage() {
+      const speechConfig = {
+        voiceConfig: {
+          prebuiltVoiceConfig: {
+            voiceName: CONFIG.GEMINI_VOICE
+          }
+        }
+      };
+      if (CONFIG.LANGUAGE_CODE) speechConfig.languageCode = CONFIG.LANGUAGE_CODE;
+
       ws.send(JSON.stringify({
         setup: {
           model: `models/${CONFIG.GEMINI_MODEL}`,
@@ -597,14 +614,7 @@ Har doim muloyim, professional va qisqa javob bering. Uzbek tilida gaplashing.
           },
           generationConfig: {
             responseModalities: ["AUDIO"],
-            speechConfig: {
-              languageCode: CONFIG.LANGUAGE_CODE,
-              voiceConfig: {
-                prebuiltVoiceConfig: {
-                  voiceName: CONFIG.GEMINI_VOICE
-                }
-              }
-            }
+            speechConfig
           },
           realtimeInputConfig: {
             automaticActivityDetection: {
