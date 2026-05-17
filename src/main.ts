@@ -1,6 +1,5 @@
 import './index.css';
 import { GoogleGenAI } from '@google/genai';
-import { VoiceAiAssistant } from './voiceAi';
 
 declare const process: {
   env: {
@@ -158,11 +157,10 @@ class App {
   private editingPanelId: string | null = null;
   private tempContentImage = '';
   private chatAi: GoogleGenAI | null = null;
-  private voiceAi: VoiceAiAssistant | null = null;
   private chatBusy = false;
   private aiChatGreeted = false;
   private aiButtonBound = false;
-  private aiContextCache: { full: string; live: string } | null = null;
+  private aiContextCache: string | null = null;
   private bodyScrollLockCount = 0;
   private mediaUrlCache = new Map<string, string>();
   private projectVideoObserver: IntersectionObserver | null = null;
@@ -170,7 +168,6 @@ class App {
   private panelViewerCollection: PanelCollection | null = null;
   private panelViewerIndex = 0;
   private panelViewerOpen = false;
-  private aiInfoModeActive = false;
   private siteSyncTimer: number | null = null;
   private siteSyncInFlight = false;
   private siteSyncReady = false;
@@ -191,7 +188,7 @@ class App {
     const syncDelay = this.isMobileViewport() ? 900 : 500;
     window.setTimeout(() => void this.importBundledSiteBackupIfNeeded(), syncDelay);
     this.startServerSiteSyncWatcher();
-    setTimeout(() => this.getAiContext('full'), 300);
+    setTimeout(() => this.getAiContext(), 300);
   }
 
   private loadData() {
@@ -454,7 +451,7 @@ class App {
 
     this.initScrollContainment();
     this.initOutsideClose();
-    this.initVoiceAi();
+    this.initAiChat();
 
     window.addEventListener('keydown', (e) => {
       if (this.panelViewerOpen && e.key === 'ArrowLeft') this.movePanelViewer(-1);
@@ -512,84 +509,10 @@ class App {
     if (this.bodyScrollLockCount === 0) document.body.style.overflow = '';
   }
 
-  public initVoiceAi() {
-    const setAiStatus = (status: 'idle' | 'connecting' | 'active' | 'listening' | 'user-speaking' | 'speaking' | 'error') => {
-      const btnBg = document.getElementById('ai-btn-bg');
-      const pulse = document.getElementById('ai-pulse');
-      const bell = document.getElementById('ai-icon-bell');
-      const xIcon = document.getElementById('ai-icon-x');
-      const statusBox = document.getElementById('ai-status-box');
-      const assistantBtn = document.getElementById('ai-assistant-btn');
-      const subText = document.getElementById('ai-sub-text');
-      this.aiInfoModeActive = status === 'active'
-        || status === 'connecting'
-        || status === 'listening'
-        || status === 'user-speaking'
-        || status === 'speaking';
-
-      if (status === 'active' || status === 'connecting' || status === 'listening' || status === 'user-speaking' || status === 'speaking') {
-        statusBox?.classList.remove('hidden');
-        setTimeout(() => {
-          statusBox?.classList.remove('scale-90', 'opacity-0', 'translate-y-8');
-          statusBox?.classList.add('scale-100', 'opacity-100', 'translate-y-0');
-        }, 50);
-        
-        bell?.classList.add('hidden');
-        xIcon?.classList.remove('hidden');
-        btnBg?.classList.remove('opacity-0');
-        btnBg?.classList.add('opacity-100');
-        pulse?.classList.remove('scale-100', 'opacity-0');
-        pulse?.classList.add('scale-125', 'opacity-100');
-        assistantBtn?.classList.toggle('ai-ringing', status === 'connecting');
-        statusBox?.classList.toggle('ai-call-waiting', status === 'connecting');
-      } else if (status === 'idle') {
-        statusBox?.classList.add('scale-90', 'opacity-0', 'translate-y-8');
-        statusBox?.classList.remove('scale-100', 'opacity-100', 'translate-y-0');
-        setTimeout(() => statusBox?.classList.add('hidden'), 700);
-
-        bell?.classList.remove('hidden');
-        xIcon?.classList.add('hidden');
-        btnBg?.classList.remove('opacity-100');
-        btnBg?.classList.add('opacity-0');
-        pulse?.classList.remove('scale-125');
-        pulse?.classList.add('scale-100');
-        pulse?.classList.add('opacity-0');
-        assistantBtn?.classList.remove('ai-ringing');
-        statusBox?.classList.remove('ai-call-waiting');
-        if (subText) subText.textContent = "System Ready";
-      } else if (status === 'error') {
-         assistantBtn?.classList.remove('ai-ringing');
-         statusBox?.classList.remove('ai-call-waiting');
-         if (subText) subText.textContent = "Xatolik yuz berdi";
-         this.toast('AI ulanishda xato! Mikrofon ruxsati, API key yoki Gemini Live modelini tekshiring.', true);
-      }
-    };
-
-    if (this.voiceAi) {
-      this.voiceAi.stop();
-      this.voiceAi = null;
-    }
-
+  public initAiChat() {
     if (process.env.GEMINI_API_KEY) {
       this.chatAi = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
     }
-
-    this.voiceAi = new VoiceAiAssistant(
-      setAiStatus,
-      undefined,
-      {
-        onUserText: (text) => {
-          const answer = this.buildLiveVoiceAnswer(text);
-          this.voiceAi?.sendTextInstruction(`Aynan quyidagi Oqqush Beton ma'lumotini erkak ovozda, qisqa va ravon o'qing.
-Saytni boshqarmang, bo'lim ochmang, panel ochmang, scroll qilmang.
-Matndan tashqariga chiqmang:
-
-${answer}`);
-        },
-        onStopIntent: () => this.handleLiveStopIntent(),
-        silenceThreshold: 0.0085,
-      },
-    );
 
     if (this.aiButtonBound) return;
     this.aiButtonBound = true;
@@ -600,38 +523,10 @@ ${answer}`);
       event.preventDefault();
       void this.sendAiChatMessage();
     });
-
-    document.getElementById('ai-assistant-btn')?.addEventListener('click', () => {
-      this.closeAiChat();
-      const wasActive = this.voiceAi.active;
-      if (!wasActive && this.panelViewerOpen) this.closePanelViewer();
-      this.voiceAi.toggle(this.getAiContext('live'));
-      if (wasActive) this.resetLiveButtonUi();
-    });
   }
 
-  private handleLiveStopIntent() {
-    return 0;
-  }
-
-  private buildLiveVoiceAnswer(text: string) {
-    const normalized = this.normalizeVoiceCommand(text);
-    const localAnswer = this.buildLocalChatAnswer(normalized);
-    return this.cleanAiSpeechText(localAnswer || 'Bu ma\'lumot Oqqush Beton ma\'lumotlarida ko\'rsatilmagan');
-  }
-
-  private cleanAiSpeechText(text: string) {
-    return text
-      .replace(/\*\*/g, '')
-      .replace(/^\d+\.\s*/gm, '')
-      .replace(/\s+-\s+/g, '. ')
-      .replace(/\s+/g, ' ')
-      .trim()
-      .slice(0, 1600);
-  }
-
-  private getAiContext(mode: 'full' | 'live' = 'full') {
-    if (this.aiContextCache) return this.aiContextCache[mode];
+  private getAiContext() {
+    if (this.aiContextCache) return this.aiContextCache;
 
     const app = document.getElementById('app')?.cloneNode(true) as HTMLElement | null;
     app?.querySelector('#admin-modal')?.remove();
@@ -680,7 +575,6 @@ ${answer}`);
     const siteKnowledge = this.buildCompleteSiteKnowledge();
 
     const compactJson = JSON.stringify(structuredData);
-    const live = this.buildFastLiveContext();
     const full = [
       'OQQUSH BETON SAYTIDA KO\'RINADIGAN ASOSIY MATN:',
       pageText.slice(0, 9000),
@@ -690,38 +584,8 @@ ${answer}`);
       'OQQUSH BETON KOMPANIYASI KATALOGI VA ADMIN MA\'LUMOTLARI IXCHAM JSON:',
       compactJson,
     ].join('\n');
-    this.aiContextCache = {full, live};
-    return this.aiContextCache[mode];
-  }
-
-  private buildFastLiveContext() {
-    const panelNames = this.getAllPanelKeywordEntries()
-      .map(item => `${item.label} -> ${item.collection}:${item.index}`)
-      .join('\n');
-
-    return [
-      'OQQUSH BETON LIVE IXCHAM KONTEKST:',
-      `Kompaniya: ${this.settings.compName}`,
-      `Izoh: ${this.settings.heroSub}`,
-      `Aloqa: telefon ${this.social.ph || 'ko\'rsatilmagan'}, Telegram ${this.social.tg || 'ko\'rsatilmagan'}`,
-      '',
-      'BO\'LIMLAR: Bosh sahifa, Biz haqimizda, Xizmatlar, Texnika, Mahsulotlar, Laboratoriya, Bajarilgan ishlar, Aloqa.',
-      '',
-      'PANEL NOMLARI:',
-      panelNames,
-      '',
-      'QOIDALAR:',
-      '5 BOSQICHLI TEKSHIRUV:',
-      '1. Avval foydalanuvchi gapini tozalangan kalit so\'z sifatida tushun.',
-      '2. "to\'xta/bas/yetarli" bo\'lsa boshqa amal qilma.',
-      '3. Saytni boshqarma: bo\'lim ochma, panel ochma, scroll qilma.',
-      '4. Bo\'lim nomi aytilsa shu bo\'lim ma\'lumotini ayt.',
-      '5. Panel yoki mahsulot nomi aytilsa faqat o\'sha ma\'lumotni ayt.',
-      'QO\'SHIMCHA:',
-      'Juda qisqa javob ber.',
-      'Faqat sayt ma\'lumotlarini ayt.',
-      'PANEL degan buyruq yoki maxsus signal ishlatma.',
-    ].join('\n');
+    this.aiContextCache = full;
+    return this.aiContextCache;
   }
 
   private buildCompleteSiteKnowledge() {
@@ -782,7 +646,7 @@ ${answer}`);
     })).filter(section => section.id && section.title);
   }
 
-  private buildLiveKeywordMap(sections = this.extractSiteAiData()) {
+  private buildAiKeywordMap(sections = this.extractSiteAiData()) {
     const map: Record<string, {type: 'panel' | 'section'; id: string}> = {};
     const wordTargets = new Map<string, {type: 'panel' | 'section'; id: string}[]>();
     const addFull = (value: string, target: {type: 'panel' | 'section'; id: string}) => {
@@ -821,7 +685,7 @@ ${answer}`);
 
   private buildAssistantRolePrompt(userInput: string) {
     const sections = this.extractSiteAiData();
-    const keywordMap = this.buildLiveKeywordMap(sections);
+    const keywordMap = this.buildAiKeywordMap(sections);
     const panelKeywords = Array.from(new Set(Object.keys(keywordMap)))
       .filter(keyword => keyword.length > 2)
       .sort((a, b) => a.localeCompare(b))
@@ -834,7 +698,7 @@ Foydalanuvchi: ${userInput}`;
   }
 
   private buildSiteAiPrompt(sections: SiteAiSection[]) {
-    const keywordMap = this.buildLiveKeywordMap(sections);
+    const keywordMap = this.buildAiKeywordMap(sections);
     const keywordList = Object.entries(keywordMap)
       .map(([keyword, value]) => `  "${keyword}" -> ${value.type}:${value.id}`)
       .join('\n');
@@ -1020,10 +884,6 @@ Foydalanuvchi: ${userInput}`;
     const panel = document.getElementById('ai-chat-panel');
     panel?.classList.toggle('hidden');
     if (!panel?.classList.contains('hidden')) {
-      if (this.voiceAi?.active) {
-        this.voiceAi.stop();
-        this.resetLiveButtonUi();
-      }
       this.greetAiChat();
       setTimeout(() => (document.getElementById('ai-chat-input') as HTMLInputElement | null)?.focus(), 20);
     }
@@ -1037,17 +897,6 @@ Foydalanuvchi: ${userInput}`;
     if (this.aiChatGreeted) return;
     this.aiChatGreeted = true;
     this.appendAiChatMessage('Assalomu aleykum, men Oqqush Beton kompaniyasining virtual yordamchisiman. Qanday yordam bera olaman?', 'assistant');
-  }
-
-  private resetLiveButtonUi() {
-    document.getElementById('ai-assistant-btn')?.classList.remove('ai-ringing');
-    document.getElementById('ai-status-box')?.classList.remove('ai-call-waiting');
-    document.getElementById('ai-icon-bell')?.classList.remove('hidden');
-    document.getElementById('ai-icon-x')?.classList.add('hidden');
-    document.getElementById('ai-btn-bg')?.classList.remove('opacity-100');
-    document.getElementById('ai-btn-bg')?.classList.add('opacity-0');
-    document.getElementById('ai-pulse')?.classList.remove('scale-125', 'opacity-100');
-    document.getElementById('ai-pulse')?.classList.add('scale-100', 'opacity-0');
   }
 
   private userAskedPanelOpen(text: string) {
@@ -1137,46 +986,6 @@ Foydalanuvchi: ${userInput}`;
       meta: item.available ? 'Mavjud' : 'Mavjud emas',
       eyebrow: 'Texnika',
     };
-  }
-
-  private resolveLivePresentationTarget(text: string, source: 'user' | 'assistant'): {collection: PanelCollection; index: number; sectionId: string; label: string} | null {
-    const explicitInfo = this.hasInfoIntent(text) || this.hasNavigationIntent(text);
-    const containsAny = (words: string[]) => words.some(word => text.includes(word));
-
-    const transportAliasTarget = this.resolveTransportAliasTarget(text);
-    if (transportAliasTarget) return transportAliasTarget;
-
-    const keywordTarget = this.resolvePanelKeywordTarget(text);
-    if (keywordTarget) return keywordTarget;
-
-    if (source === 'user') return null;
-
-    const productPanelSections = this.productSections.flatMap(section => (section.panels || []).map(panel => ({
-      section,
-      panel,
-    })));
-    const sectionIdMap: Record<string, string> = {
-      concreteMix: 'concrete-mix',
-      highPerformance: 'high-performance-concrete',
-      plitalar: 'plitalar-section',
-      gisht: 'gisht-section',
-    };
-
-    const panelIndex = this.resolveProductPanelAliasIndex(text);
-    if (panelIndex >= 0) {
-      const {section, panel} = productPanelSections[panelIndex];
-      return {
-        collection: 'product-panels',
-        index: panelIndex,
-        sectionId: sectionIdMap[section.id] || 'products-section',
-        label: panel.name,
-      };
-    }
-
-    if (source === 'assistant') return null;
-
-    if (!explicitInfo) return null;
-    return null;
   }
 
   private resolvePanelKeywordTarget(text: string): {collection: PanelCollection; index: number; sectionId: string; label: string} | null {
@@ -1306,7 +1115,7 @@ Foydalanuvchi: ${userInput}`;
         index,
         sectionId: sectionIdMap[section.id] || 'products-section',
         label: panel.name,
-        keywords: expand(panel.name, `${section.name} ${panel.name}`, ...this.livePanelAliases(panel.id).filter(alias => alias.length > 3 || /\d/.test(alias)), ...domKeywords(panel.id)),
+        keywords: expand(panel.name, `${section.name} ${panel.name}`, ...this.panelAliases(panel.id).filter(alias => alias.length > 3 || /\d/.test(alias)), ...domKeywords(panel.id)),
       });
     });
 
@@ -1451,7 +1260,7 @@ Foydalanuvchi: ${userInput}`;
     panels.forEach((panel, index) => {
       const aliases = [
         this.normalizeVoiceCommand(panel.name),
-        ...this.livePanelAliases(panel.id),
+        ...this.panelAliases(panel.id),
       ].filter(Boolean);
 
       aliases.forEach(alias => {
@@ -1485,7 +1294,7 @@ Foydalanuvchi: ${userInput}`;
     };
   }
 
-  private livePanelAliases(panelId: string) {
+  private panelAliases(panelId: string) {
     const aliases: Record<string, string[]> = {
       'hom-gisht': ['hom gisht', 'xom gisht'],
       'pishiq-gisht': ['pishiq gisht'],
@@ -1638,19 +1447,6 @@ Foydalanuvchi: ${userInput}`;
     const thinking = this.appendAiChatMessage('Javob tayyorlanmoqda...', 'assistant');
 
     try {
-      const normalized = this.normalizeVoiceCommand(text);
-      const localAnswer = this.buildLocalChatAnswer(normalized);
-      if (localAnswer) {
-        this.renderAssistantMessage(thinking, localAnswer);
-        return;
-      }
-
-      const panelTarget = this.resolveLivePresentationTarget(normalized, 'user');
-      if (panelTarget) {
-        const item = this.getPanelViewerItem(panelTarget.collection, panelTarget.index);
-        this.renderAssistantMessage(thinking, item ? this.formatPanelAnswer([item]) : 'Bu ma\'lumot Oqqush Beton ma\'lumotlarida ko\'rsatilmagan');
-        return;
-      }
 
       if (!this.chatAi) {
         throw new Error('Gemini API key topilmadi');
@@ -3547,7 +3343,7 @@ ${this.getAiContext()}`,
       const card = title?.closest<HTMLElement>('.glass');
       if (!card || !title) return;
       card.dataset.panel = panel.id;
-      card.dataset.keywords = this.aiKeywords(panel.name, ...this.livePanelAliases(panel.id));
+      card.dataset.keywords = this.aiKeywords(panel.name, ...this.panelAliases(panel.id));
       card.dataset.aiContent = [panel.description, panel.meta].filter(Boolean).join('\n');
       title.setAttribute('data-panel-title', '');
       desc?.setAttribute('data-panel-content', '');
@@ -3775,7 +3571,6 @@ ${this.getAiContext()}`,
   }
 
   public openPanelCollection(collection: PanelCollection, index: number) {
-    if (this.aiInfoModeActive || this.voiceAi?.active) return;
     const collections = this.getPanelViewerCollections();
     this.openPanelViewer(collections[collection] || [], index, collection);
   }
@@ -3871,7 +3666,6 @@ ${this.getAiContext()}`,
   }
 
   private openPanelViewer(items: PanelViewerItem[], index: number, collection: PanelCollection | null = null) {
-    if (this.aiInfoModeActive || this.voiceAi?.active) return;
     if (!items.length) return;
     this.pauseProjectCardVideos();
     this.panelViewerItems = items;

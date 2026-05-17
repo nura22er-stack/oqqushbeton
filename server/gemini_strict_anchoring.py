@@ -86,36 +86,3 @@ def build_generate_content_payload(user_input: str, panel_keywords: Iterable[str
         },
         "safety_settings": SAFETY_SETTINGS,
     }
-
-
-def build_live_setup_message(panel_keywords: Iterable[str]) -> dict:
-    return {
-        "setup": {
-            "model": DEFAULT_MODEL,
-            "systemInstruction": {
-                "parts": [
-                    {
-                        "text": build_system_instruction(panel_keywords),
-                    }
-                ]
-            },
-            "generationConfig": {
-                "responseModalities": ["AUDIO", "TEXT"],
-            },
-            "safetySettings": SAFETY_SETTINGS,
-        }
-    }
-
-
-def build_live_text_turn(user_input: str, panel_keywords: Iterable[str]) -> dict:
-    return {
-        "clientContent": {
-            "turns": [
-                {
-                    "role": "user",
-                    "parts": build_multimodal_user_parts(user_input, panel_keywords),
-                }
-            ],
-            "turnComplete": True,
-        }
-    }
