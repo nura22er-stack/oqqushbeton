@@ -57,6 +57,7 @@ export class PhoneAgentWidget {
   private websiteKnowledge = '';
   private ringingNodes = new Set<OscillatorNode>();
   private ringTimers = new Map<OscillatorNode, number>();
+  private playbackSources = new Set<AudioBufferSourceNode>();
 
   init() {
     if (this.bound) return;
@@ -236,7 +237,9 @@ ${this.websiteKnowledge || this.collectWebsiteKnowledge()}`;
   }
 
   private async handleMessage(event: MessageEvent) {
+    if (!this.calling) return;
     const raw = typeof event.data === 'string' ? event.data : await event.data.text();
+    if (!this.calling) return;
     const message = JSON.parse(raw);
     const content = message.serverContent;
 
@@ -274,6 +277,7 @@ ${this.websiteKnowledge || this.collectWebsiteKnowledge()}`;
   }
 
   private sendGreeting() {
+    if (!this.calling) return;
     this.ws?.send(JSON.stringify({
       clientContent: {
         turns: [{
@@ -319,7 +323,7 @@ ${this.websiteKnowledge || this.collectWebsiteKnowledge()}`;
   }
 
   private playPcm16(base64Audio: string) {
-    if (!this.audioContext) return;
+    if (!this.audioContext || !this.calling) return;
     const bytes = this.base64ToUint8Array(base64Audio);
     const pcm = new Int16Array(bytes.buffer);
     const buffer = this.audioContext.createBuffer(1, pcm.length, CONFIG.outputRate);
@@ -328,12 +332,23 @@ ${this.websiteKnowledge || this.collectWebsiteKnowledge()}`;
     const source = this.audioContext.createBufferSource();
     source.buffer = buffer;
     source.connect(this.audioContext.destination);
+    this.playbackSources.add(source);
+    let finished = false;
+    const finish = () => {
+      if (finished) return;
+      finished = true;
+      this.playbackSources.delete(source);
+      try {
+        source.disconnect();
+      } catch {
+        // Already disconnected.
+      }
+      if (this.calling && this.audioContext && this.audioContext.currentTime >= this.playbackTime - 0.08) this.stopWaves();
+    };
     this.playbackTime = Math.max(this.playbackTime, this.audioContext.currentTime + 0.02);
     source.start(this.playbackTime);
     this.playbackTime += buffer.duration;
-    source.onended = () => {
-      if (this.audioContext && this.audioContext.currentTime >= this.playbackTime - 0.08) this.stopWaves();
-    };
+    source.onended = finish;
   }
 
   private toggleMute() {
@@ -351,6 +366,7 @@ ${this.websiteKnowledge || this.collectWebsiteKnowledge()}`;
     this.calling = false;
     this.connected = false;
     this.stopRinging();
+    this.stopPlayback();
     this.callButton()?.classList.remove('is-ringing');
     this.updateCallButtonUi();
     this.closeOverlay();
@@ -400,6 +416,23 @@ ${this.websiteKnowledge || this.collectWebsiteKnowledge()}`;
         // Already stopped.
       }
     }
+  }
+
+  private stopPlayback() {
+    for (const source of this.playbackSources) {
+      try {
+        source.stop();
+      } catch {
+        // Already stopped or not started yet.
+      }
+      try {
+        source.disconnect();
+      } catch {
+        // Already disconnected.
+      }
+    }
+    this.playbackSources.clear();
+    this.playbackTime = this.audioContext?.currentTime || 0;
   }
 
   private startTimer() {
