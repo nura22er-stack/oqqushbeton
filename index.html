@@ -508,7 +508,7 @@
                         </div>
                         <div>
                           <p class="text-[8px] font-black text-white/30 uppercase tracking-[2px] mb-1">Yuk ko'tarish qobiliyati</p>
-                          <p id="panel-plita-12-meta" class="text-xs font-black text-orange-500 uppercase tracking-widest">600-900 kg/m²</p>
+                          <p id="panel-plita-12-meta" class="text-xs font-black text-orange-500 uppercase tracking-widest">600-900 kg/mÂ²</p>
                         </div>
                       </div>
                     </div>
@@ -528,7 +528,7 @@
                         </div>
                         <div>
                           <p class="text-[8px] font-black text-white/30 uppercase tracking-[2px] mb-1">Yuk ko'tarish qobiliyati</p>
-                          <p id="panel-plita-14-meta" class="text-xs font-black text-orange-500 uppercase tracking-widest">900-1300 kg/m²</p>
+                          <p id="panel-plita-14-meta" class="text-xs font-black text-orange-500 uppercase tracking-widest">900-1300 kg/mÂ²</p>
                         </div>
                       </div>
                     </div>
@@ -627,7 +627,7 @@
                   <span class="text-orange-500 text-[10px] font-black">01</span>
                 </div>
                 <h4 class="text-xl font-heading font-black text-white uppercase tracking-tighter">Normal qotish kamerasi</h4>
-                <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest leading-relaxed">Olingan namunalarni 20°C (±5°) haroratda 95% namlikda 28 sutka davomida saqlanadi.</p>
+                <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest leading-relaxed">Olingan namunalarni 20Â°C (Â±5Â°) haroratda 95% namlikda 28 sutka davomida saqlanadi.</p>
               </div>
             </div>
 
@@ -1106,15 +1106,49 @@
           </button>
         </form>
       </div>
-      <button id="chat-btn" class="relative size-16 bg-[#050708] border border-white/15 text-white rounded-2xl flex items-center justify-center shadow-2xl hover:scale-105 active:scale-95 transition-all duration-500 group" aria-label="Chat">
-        <div class="absolute inset-0 rounded-2xl bg-gradient-to-br from-emerald-400/20 to-cyan-500/20 opacity-0 transition-opacity duration-500 group-hover:opacity-100"></div>
-        <svg class="relative z-10 size-8 text-cyan-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/>
-          <path d="M8 9h8"/><path d="M8 13h5"/>
-        </svg>
-        <div class="absolute -top-1 -right-1 rounded-full bg-cyan-300 px-1.5 py-0.5 text-[8px] font-black text-black border-2 border-black">CHAT</div>
-      </button>
+      <div id="floating-actions" class="flex items-center gap-3">
+        <button id="phone-call-btn" class="relative size-[60px] rounded-full border border-emerald-200/30 bg-gradient-to-br from-emerald-400 to-emerald-700 text-white shadow-[0_18px_46px_rgba(34,197,94,0.42)] transition-all duration-300 hover:scale-105 active:scale-95" aria-label="Oqqush Beton virtual agentiga qo'ng'iroq qilish">
+          <svg class="m-auto size-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.78 19.78 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.78 19.78 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.35 1.89.66 2.78a2 2 0 0 1-.45 2.11L8.05 9.88a16 16 0 0 0 6.07 6.07l1.27-1.27a2 2 0 0 1 2.11-.45c.89.31 1.82.53 2.78.66A2 2 0 0 1 22 16.92z"/>
+          </svg>
+          <div class="absolute -top-1 -right-1 rounded-full bg-emerald-200 px-1.5 py-0.5 text-[8px] font-black text-emerald-950 border-2 border-black">AI</div>
+        </button>
+        <button id="chat-btn" class="relative size-16 bg-[#050708] border border-white/15 text-white rounded-2xl flex items-center justify-center shadow-2xl hover:scale-105 active:scale-95 transition-all duration-500 group" aria-label="Chat">
+          <div class="absolute inset-0 rounded-2xl bg-gradient-to-br from-emerald-400/20 to-cyan-500/20 opacity-0 transition-opacity duration-500 group-hover:opacity-100"></div>
+          <svg class="relative z-10 size-8 text-cyan-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/>
+            <path d="M8 9h8"/><path d="M8 13h5"/>
+          </svg>
+          <div class="absolute -top-1 -right-1 rounded-full bg-cyan-300 px-1.5 py-0.5 text-[8px] font-black text-black border-2 border-black">CHAT</div>
+        </button>
+      </div>
     </div>
+
+    <section id="phone-call-overlay" class="fixed inset-0 z-[1001] hidden items-end justify-center bg-black/60 p-5 backdrop-blur-xl" aria-modal="true" role="dialog" aria-live="polite">
+      <div id="phone-call-card" class="w-[min(420px,100%)] overflow-hidden rounded-[28px] border border-white/15 bg-[#07100f]/95 shadow-[0_28px_90px_rgba(0,0,0,0.62)]">
+        <div class="flex flex-col items-center px-6 pb-5 pt-8 text-center">
+          <div class="phone-agent-avatar mb-4">
+            <div class="relative z-10 grid size-24 place-items-center rounded-full border border-white/20 bg-gradient-to-br from-emerald-400 to-cyan-900 text-3xl font-black tracking-wider text-white shadow-[0_0_42px_rgba(34,197,94,0.34)]">OB</div>
+          </div>
+          <h3 class="text-sm font-black uppercase tracking-[4px] text-white">Oqqush Beton</h3>
+          <p class="mt-1 text-sm font-bold text-white/60">Virtual Agent</p>
+          <div id="phone-call-timer" class="mt-4 rounded-full border border-emerald-300/25 bg-emerald-300/10 px-3 py-1 text-xs font-black text-emerald-200">00:00</div>
+          <div id="phone-call-status" class="mt-5 min-h-6 text-[11px] font-black uppercase tracking-[3px] text-emerald-300">Ulanmoqda...</div>
+          <div id="phone-sound-waves" class="phone-sound-waves mt-4">
+            <span></span><span></span><span></span><span></span><span></span>
+          </div>
+        </div>
+        <div class="mx-5 mb-5 rounded-2xl border border-white/10 bg-white/[0.06] p-4 text-left text-sm leading-relaxed text-white/70">
+          <div class="mb-2 text-[10px] font-black uppercase tracking-[2px] text-white/40">Holat</div>
+          <span id="phone-mic-indicator" class="phone-mic-indicator"></span>
+          <span id="phone-call-hint">Qo'ng'iroq tugmasini bosing.</span>
+        </div>
+        <div class="grid grid-cols-2 gap-3 border-t border-white/10 bg-black/25 p-5">
+          <button id="phone-mute-btn" class="h-14 rounded-2xl border border-white/15 bg-white/10 text-sm font-black text-white transition hover:bg-white/15" type="button">Mute</button>
+          <button id="phone-hangup-btn" class="h-14 rounded-2xl bg-red-500 text-sm font-black text-white shadow-[0_16px_42px_rgba(239,68,68,0.28)] transition hover:bg-red-400" type="button">Hang up</button>
+        </div>
+      </div>
+    </section>
 
     <script type="module" src="/src/main.ts"></script>
   </body>

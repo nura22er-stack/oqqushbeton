@@ -123,6 +123,131 @@
     @apply bg-white/10 border border-white/20 backdrop-blur-2xl px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 transition-all duration-300;
   }
 
+  #phone-call-btn::before,
+  #phone-call-btn::after {
+    content: '';
+    position: absolute;
+    inset: -8px;
+    border: 1px solid rgba(34, 197, 94, 0.42);
+    border-radius: 999px;
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(0.9);
+  }
+
+  #phone-call-btn.is-ringing::before,
+  #phone-call-btn.is-ringing::after {
+    animation: phone-call-button-pulse 1.45s ease-out infinite;
+  }
+
+  #phone-call-btn.is-ringing::after {
+    animation-delay: 0.55s;
+  }
+
+  #phone-call-card {
+    background:
+      radial-gradient(circle at 50% 12%, rgba(34, 197, 94, 0.2), transparent 11rem),
+      linear-gradient(180deg, rgba(17, 24, 39, 0.98), rgba(7, 16, 15, 0.96));
+    transform: translateY(16px) scale(0.96);
+    opacity: 0;
+    animation: phone-call-card-in 260ms ease forwards;
+  }
+
+  .phone-agent-avatar {
+    position: relative;
+    width: 132px;
+    height: 132px;
+    display: grid;
+    place-items: center;
+  }
+
+  .phone-agent-avatar::before,
+  .phone-agent-avatar::after {
+    content: '';
+    position: absolute;
+    inset: 12px;
+    border: 1px solid rgba(34, 197, 94, 0.42);
+    border-radius: 999px;
+    animation: phone-agent-avatar-pulse 2s ease-out infinite;
+  }
+
+  .phone-agent-avatar::after {
+    animation-delay: 0.72s;
+  }
+
+  .phone-sound-waves {
+    display: flex;
+    align-items: end;
+    justify-content: center;
+    gap: 6px;
+    height: 48px;
+    opacity: 0.3;
+    transition: opacity 180ms ease;
+  }
+
+  .phone-sound-waves.is-active {
+    opacity: 1;
+  }
+
+  .phone-sound-waves span {
+    width: 5px;
+    height: 14px;
+    border-radius: 999px;
+    background: linear-gradient(180deg, #bbf7d0, #22c55e);
+    animation: phone-sound-wave 1.1s ease-in-out infinite;
+    animation-play-state: paused;
+  }
+
+  .phone-sound-waves.is-active span {
+    animation-play-state: running;
+  }
+
+  .phone-sound-waves span:nth-child(2) { animation-delay: 0.1s; }
+  .phone-sound-waves span:nth-child(3) { animation-delay: 0.2s; }
+  .phone-sound-waves span:nth-child(4) { animation-delay: 0.3s; }
+  .phone-sound-waves span:nth-child(5) { animation-delay: 0.4s; }
+
+  .phone-mic-indicator {
+    display: inline-grid;
+    width: 10px;
+    height: 10px;
+    margin-right: 8px;
+    border-radius: 999px;
+    background: #64748b;
+    vertical-align: middle;
+  }
+
+  .phone-mic-indicator.is-active {
+    background: #22c55e;
+    box-shadow: 0 0 0 5px rgba(34, 197, 94, 0.14);
+  }
+
+  #phone-mute-btn.is-muted {
+    background: rgba(148, 163, 184, 0.26);
+    color: #cbd5e1;
+  }
+
+  @keyframes phone-call-button-pulse {
+    0% { opacity: 0.8; transform: scale(0.88); }
+    70% { opacity: 0; transform: scale(1.38); }
+    100% { opacity: 0; transform: scale(1.38); }
+  }
+
+  @keyframes phone-call-card-in {
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  @keyframes phone-agent-avatar-pulse {
+    0% { opacity: 0.62; transform: scale(0.72); }
+    80% { opacity: 0; transform: scale(1.18); }
+    100% { opacity: 0; transform: scale(1.18); }
+  }
+
+  @keyframes phone-sound-wave {
+    0%, 100% { height: 12px; }
+    50% { height: 38px; }
+  }
+
   .about-copy p {
     color: rgba(255,255,255,0.97) !important;
     text-shadow: 0 1px 20px rgba(0,0,0,0.42);
@@ -710,6 +835,22 @@
   #chat-btn {
     width: 3.6rem;
     height: 3.6rem;
+  }
+
+  #phone-call-btn {
+    width: 3.6rem;
+    height: 3.6rem;
+  }
+
+  #phone-call-overlay {
+    align-items: stretch;
+    padding: 0;
+  }
+
+  #phone-call-card {
+    width: 100%;
+    min-height: 100svh;
+    border-radius: 0;
   }
 
 }

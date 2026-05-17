@@ -1,4 +1,5 @@
 import './index.css';
+import { PhoneAgentWidget } from './phoneAgent';
 
 interface Project {
   id: string;
@@ -136,6 +137,7 @@ class App {
   private chatBusy = false;
   private chatGreeted = false;
   private chatButtonBound = false;
+  private phoneAgent = new PhoneAgentWidget();
   private bodyScrollLockCount = 0;
   private mediaUrlCache = new Map<string, string>();
   private projectVideoObserver: IntersectionObserver | null = null;
@@ -426,6 +428,7 @@ class App {
     this.initScrollContainment();
     this.initOutsideClose();
     this.initChat();
+    this.phoneAgent.init();
 
     window.addEventListener('keydown', (e) => {
       if (this.panelViewerOpen && e.key === 'ArrowLeft') this.movePanelViewer(-1);
