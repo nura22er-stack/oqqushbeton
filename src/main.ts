@@ -1163,7 +1163,7 @@ class App {
     return window.matchMedia('(max-width: 767px)').matches;
   }
 
-  private sendChatMessage() {
+  private async sendChatMessage() {
     const input = document.getElementById('chat-input') as HTMLInputElement | null;
     const text = input?.value.trim();
     if (!text || this.chatBusy) return;
@@ -1173,10 +1173,14 @@ class App {
     this.appendChatMessage(text, 'user');
     const thinking = this.appendChatMessage('Javob tayyorlanmoqda...', 'assistant');
 
-    const answer = this.buildChatAnswer(text);
-    this.renderAssistantMessage(thinking, answer);
-    this.chatBusy = false;
-    this.scrollChatToBottom();
+    try {
+      await this.waitForBrowserIdle();
+      const answer = this.buildChatAnswer(text);
+      this.renderAssistantMessage(thinking, answer);
+      this.scrollChatToBottom();
+    } finally {
+      this.chatBusy = false;
+    }
   }
 
   private buildChatAnswer(text: string) {

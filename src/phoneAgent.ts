@@ -52,20 +52,32 @@ export class PhoneAgentWidget {
   private connected = false;
   private calling = false;
   private bound = false;
+  private callToken = 0;
+  private lastMicUiAt = 0;
+  private websiteKnowledge = '';
+  private ringingNodes = new Set<OscillatorNode>();
+  private ringTimers = new Map<OscillatorNode, number>();
 
   init() {
     if (this.bound) return;
     this.bound = true;
-    this.callButton()?.addEventListener('click', () => void this.startCall());
+    this.refreshWebsiteKnowledge();
+    this.callButton()?.addEventListener('click', () => {
+      if (this.calling) this.endCall();
+      else void this.startCall();
+    });
     this.el<HTMLButtonElement>('phone-hangup-btn')?.addEventListener('click', () => this.endCall());
+    this.el<HTMLButtonElement>('phone-call-close')?.addEventListener('click', () => this.endCall());
     this.el<HTMLButtonElement>('phone-mute-btn')?.addEventListener('click', () => this.toggleMute());
   }
 
   private async startCall() {
     if (this.calling) return;
+    const token = ++this.callToken;
     this.calling = true;
     this.muted = false;
     this.updateMuteUi();
+    this.updateCallButtonUi();
     this.setStatus('Ulanmoqda...');
     this.setHint('Telefon chaqirilmoqda...');
     this.callButton()?.classList.add('is-ringing');
@@ -74,22 +86,27 @@ export class PhoneAgentWidget {
       this.audioContext ||= new ((window.AudioContext || (window as any).webkitAudioContext) as typeof AudioContext)();
       await this.audioContext.resume();
       await this.ringPattern();
+      if (!this.calling || token !== this.callToken) return;
       this.callButton()?.classList.remove('is-ringing');
       this.openOverlay();
       this.setHint('Mikrofon ruxsatini bering va gapirishga tayyorlaning.');
       await this.connectLive();
+      if (!this.calling || token !== this.callToken) this.endCall();
     } catch (error) {
       console.error('Phone agent error:', error);
       this.callButton()?.classList.remove('is-ringing');
       this.setStatus('Xatolik');
       this.setHint(error instanceof Error ? error.message : "Qo'ng'iroqni boshlashda xatolik yuz berdi.");
       this.calling = false;
+      this.updateCallButtonUi();
     }
   }
 
   private async ringPattern() {
     await this.ringTone(2000);
+    if (!this.calling) return;
     await this.wait(1500);
+    if (!this.calling) return;
     await this.ringTone(2000);
   }
 
@@ -107,9 +124,27 @@ export class PhoneAgentWidget {
       gain.gain.setValueAtTime(0.24, now + duration - 0.08);
       gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
       osc.connect(gain).connect(this.audioContext.destination);
+      this.ringingNodes.add(osc);
+      let finished = false;
+      const finish = () => {
+        if (finished) return;
+        finished = true;
+        const timer = this.ringTimers.get(osc);
+        if (timer) window.clearTimeout(timer);
+        this.ringTimers.delete(osc);
+        this.ringingNodes.delete(osc);
+        resolve();
+      };
       osc.start(now);
-      osc.stop(now + duration);
-      osc.onended = () => resolve();
+      const stopTimer = window.setTimeout(() => {
+        try {
+          osc.stop();
+        } catch {
+          finish();
+        }
+      }, durationMs + 80);
+      this.ringTimers.set(osc, stopTimer);
+      osc.onended = finish;
     });
   }
 
@@ -152,7 +187,19 @@ export class PhoneAgentWidget {
     return `${PROMPT}
 
 WEBSAYTDAN O'QILGAN BO'LIMLAR:
-${this.collectWebsiteKnowledge()}`;
+${this.websiteKnowledge || this.collectWebsiteKnowledge()}`;
+  }
+
+  private refreshWebsiteKnowledge() {
+    const refresh = () => {
+      this.websiteKnowledge = this.collectWebsiteKnowledge();
+    };
+    const requestIdle = (window as Window & {requestIdleCallback?: (callback: IdleRequestCallback, options?: IdleRequestOptions) => number}).requestIdleCallback;
+    if (typeof requestIdle === 'function') {
+      requestIdle(refresh, {timeout: 1800});
+      return;
+    }
+    window.setTimeout(refresh, 250);
   }
 
   private collectWebsiteKnowledge() {
@@ -160,19 +207,19 @@ ${this.collectWebsiteKnowledge()}`;
     const knowledge = sections
       .map(section => {
         const title = this.sectionTitle(section);
-        const text = this.trimText(this.normalizeText(section.innerText || section.textContent || ''), 2600);
+        const text = this.trimText(this.normalizeText(section.textContent || ''), 2200);
         return text ? `### ${title}\n${text}` : '';
       })
       .filter(Boolean)
       .join('\n\n');
 
-    return this.trimText(knowledge || 'Saytdan bo\'lim matnlari topilmadi.', 18000);
+    return this.trimText(knowledge || 'Saytdan bo\'lim matnlari topilmadi.', 15000);
   }
 
   private sectionTitle(section: HTMLElement) {
     if (section.id && SECTION_TITLES[section.id]) return SECTION_TITLES[section.id];
     const heading = section.querySelector<HTMLElement>('h1, h2, h3');
-    return this.normalizeText(heading?.innerText || heading?.textContent || "Sayt bo'limi") || "Sayt bo'limi";
+    return this.normalizeText(heading?.textContent || "Sayt bo'limi") || "Sayt bo'limi";
   }
 
   private normalizeText(text: string) {
@@ -242,7 +289,7 @@ ${this.collectWebsiteKnowledge()}`;
     if (!this.micStream || !('MediaRecorder' in window)) return;
     this.recorder = new MediaRecorder(this.micStream);
     this.recorder.ondataavailable = () => undefined;
-    this.recorder.start(1000);
+    this.recorder.start(2500);
   }
 
   private startMicStreamer() {
@@ -254,6 +301,7 @@ ${this.collectWebsiteKnowledge()}`;
     this.silentGain.gain.value = 0;
     this.processor.onaudioprocess = event => {
       if (!this.ws || this.ws.readyState !== WebSocket.OPEN || !this.connected || this.muted) return;
+      if (this.ws.bufferedAmount > 512 * 1024) return;
       const input = event.inputBuffer.getChannelData(0);
       const pcm16 = this.float32ToPcm16(input);
       this.ws.send(JSON.stringify({
@@ -264,7 +312,7 @@ ${this.collectWebsiteKnowledge()}`;
           },
         },
       }));
-      this.setMicActive(this.audioLevel(input) > 0.018);
+      this.updateMicUi(input);
     };
     this.source.connect(this.processor);
     this.processor.connect(this.silentGain).connect(this.inputContext.destination);
@@ -299,8 +347,12 @@ ${this.collectWebsiteKnowledge()}`;
   }
 
   private endCall(closeSocket = true) {
+    this.callToken += 1;
     this.calling = false;
     this.connected = false;
+    this.stopRinging();
+    this.callButton()?.classList.remove('is-ringing');
+    this.updateCallButtonUi();
     this.closeOverlay();
     this.stopWaves();
     this.setMicActive(false);
@@ -329,8 +381,25 @@ ${this.collectWebsiteKnowledge()}`;
   private updateMuteUi() {
     const button = this.el<HTMLButtonElement>('phone-mute-btn');
     if (!button) return;
-    button.textContent = this.muted ? 'Unmute' : 'Mute';
+    button.textContent = this.muted ? 'Yoqish' : 'Mikrofon';
     button.classList.toggle('is-muted', this.muted);
+  }
+
+  private updateCallButtonUi() {
+    const button = this.callButton();
+    if (!button) return;
+    button.classList.toggle('is-active', this.calling);
+    button.setAttribute('aria-label', this.calling ? "AI qo'ng'irog'ini o'chirish" : "Oqqush Beton virtual agentiga qo'ng'iroq qilish");
+  }
+
+  private stopRinging() {
+    for (const node of this.ringingNodes) {
+      try {
+        node.stop();
+      } catch {
+        // Already stopped.
+      }
+    }
   }
 
   private startTimer() {
@@ -365,6 +434,13 @@ ${this.collectWebsiteKnowledge()}`;
     let sum = 0;
     for (let i = 0; i < samples.length; i += 1) sum += samples[i] * samples[i];
     return Math.sqrt(sum / samples.length);
+  }
+
+  private updateMicUi(samples: Float32Array) {
+    const now = performance.now();
+    if (now - this.lastMicUiAt < 180) return;
+    this.lastMicUiAt = now;
+    this.setMicActive(this.audioLevel(samples) > 0.018);
   }
 
   private arrayBufferToBase64(buffer: ArrayBufferLike) {
