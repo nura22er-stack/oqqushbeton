@@ -12,10 +12,29 @@ Kompaniya nomi: Oqqush Beton.
 Mahsulotlar: Qurilish uchun beton, armaturali beton konstruksiyalar, temir-beton ustunlar, plitalar.
 Xizmatlar: Beton yetkazib berish, qurilish konsultatsiyasi.
 Ish vaqti: Dushanba-Shanba 08:00-18:00.
+Savollarga javob berishda pastdagi WEBSAYTDAN O'QILGAN BO'LIMLAR matnidan foydalaning.
+Foydalanuvchi bo'lim nomini aytsa, aynan shu bo'lim haqida qisqa va tushunarli ma'lumot bering.
+Saytda panel yoki bo'lim ochmang, sahifani boshqarmang, faqat ovoz orqali javob bering.
+Ma'lumot saytda aniq yozilmagan bo'lsa, "Bu ma'lumot saytda aniq ko'rsatilmagan" deb ayting.
 Faqat kompaniya haqida savollarga javob bering.
 Boshqa mavzularda: "Bu mavzu bo'yicha sizga yordam bera olmayman, lekin beton va qurilish bo'yicha savollaringizga javob berishga tayyorman" deb ayting.
 Har doim muloyim, professional va qisqa javob bering. Uzbek tilida gaplashing.
 `.trim();
+
+const SECTION_TITLES: Record<string, string> = {
+  home: 'Bosh sahifa',
+  about: 'Biz haqimizda',
+  services: 'Xizmatlar',
+  transport: 'Texnika',
+  'products-section': 'Mahsulotlar',
+  'concrete-mix': 'Beton qorishmalari',
+  'high-performance-concrete': 'Yuqori mustahkam beton',
+  'plitalar-section': 'Plitalar',
+  'gisht-section': "G'isht mahsulotlari",
+  laboratory: 'Laboratoriya',
+  projects: 'Bajarilgan ishlar',
+  footer: 'Aloqa',
+};
 
 export class PhoneAgentWidget {
   private ws: WebSocket | null = null;
@@ -114,10 +133,11 @@ export class PhoneAgentWidget {
   }
 
   private sendSetup() {
+    const prompt = this.buildSystemPrompt();
     this.ws?.send(JSON.stringify({
       setup: {
         model: `models/${CONFIG.model}`,
-        systemInstruction: {parts: [{text: PROMPT}]},
+        systemInstruction: {parts: [{text: prompt}]},
         generationConfig: {
           responseModalities: ['AUDIO'],
           speechConfig: {voiceConfig: {prebuiltVoiceConfig: {voiceName: CONFIG.voice}}},
@@ -126,6 +146,46 @@ export class PhoneAgentWidget {
         outputAudioTranscription: {},
       },
     }));
+  }
+
+  private buildSystemPrompt() {
+    return `${PROMPT}
+
+WEBSAYTDAN O'QILGAN BO'LIMLAR:
+${this.collectWebsiteKnowledge()}`;
+  }
+
+  private collectWebsiteKnowledge() {
+    const sections = Array.from(document.querySelectorAll<HTMLElement>('#app > section, #app > footer'));
+    const knowledge = sections
+      .map(section => {
+        const title = this.sectionTitle(section);
+        const text = this.trimText(this.normalizeText(section.innerText || section.textContent || ''), 2600);
+        return text ? `### ${title}\n${text}` : '';
+      })
+      .filter(Boolean)
+      .join('\n\n');
+
+    return this.trimText(knowledge || 'Saytdan bo\'lim matnlari topilmadi.', 18000);
+  }
+
+  private sectionTitle(section: HTMLElement) {
+    if (section.id && SECTION_TITLES[section.id]) return SECTION_TITLES[section.id];
+    const heading = section.querySelector<HTMLElement>('h1, h2, h3');
+    return this.normalizeText(heading?.innerText || heading?.textContent || "Sayt bo'limi") || "Sayt bo'limi";
+  }
+
+  private normalizeText(text: string) {
+    const lines = text
+      .split('\n')
+      .map(line => line.replace(/\s+/g, ' ').trim())
+      .filter(line => line.length > 1);
+    return lines.filter((line, index) => index === 0 || line !== lines[index - 1]).join('\n');
+  }
+
+  private trimText(text: string, maxLength: number) {
+    if (text.length <= maxLength) return text;
+    return `${text.slice(0, maxLength - 3)}...`;
   }
 
   private async handleMessage(event: MessageEvent) {
@@ -322,6 +382,7 @@ export class PhoneAgentWidget {
   }
 
   private openOverlay() {
+    document.getElementById('chat-panel')?.classList.add('hidden');
     this.el('phone-call-overlay')?.classList.remove('hidden');
     this.el('phone-call-overlay')?.classList.add('flex');
   }

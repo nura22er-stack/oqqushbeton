@@ -144,10 +144,18 @@
     animation-delay: 0.55s;
   }
 
+  #phone-call-overlay {
+    right: 1.5rem;
+    bottom: 6.75rem;
+    width: min(390px, calc(100vw - 2rem));
+    pointer-events: none;
+  }
+
   #phone-call-card {
     background:
       radial-gradient(circle at 50% 12%, rgba(34, 197, 94, 0.2), transparent 11rem),
       linear-gradient(180deg, rgba(17, 24, 39, 0.98), rgba(7, 16, 15, 0.96));
+    max-height: min(78svh, 620px);
     transform: translateY(16px) scale(0.96);
     opacity: 0;
     animation: phone-call-card-in 260ms ease forwards;
@@ -843,14 +851,19 @@
   }
 
   #phone-call-overlay {
-    align-items: stretch;
+    right: 0.75rem;
+    left: 0.75rem;
+    bottom: 5.2rem;
+    width: auto;
+    align-items: flex-end;
     padding: 0;
   }
 
   #phone-call-card {
     width: 100%;
-    min-height: 100svh;
-    border-radius: 0;
+    min-height: 0;
+    max-height: min(74svh, 560px);
+    border-radius: 1.35rem;
   }
 
 }
