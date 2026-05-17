@@ -1,12 +1,4 @@
 import './index.css';
-import { GoogleGenAI } from '@google/genai';
-
-declare const process: {
-  env: {
-    GEMINI_API_KEY?: string;
-    GEMINI_CHAT_MODEL?: string;
-  };
-};
 
 interface Project {
   id: string;
@@ -80,21 +72,6 @@ interface PanelViewerItem {
   eyebrow?: string;
 }
 
-interface SiteAiPanel {
-  id: string;
-  title: string;
-  content: string;
-  keywords: string[];
-}
-
-interface SiteAiSection {
-  id: string;
-  title: string;
-  route: string | null;
-  keywords: string[];
-  panels: SiteAiPanel[];
-}
-
 interface Settings {
   compName: string;
   heroTitle: string;
@@ -156,11 +133,9 @@ class App {
   private editingContentId: string | null = null;
   private editingPanelId: string | null = null;
   private tempContentImage = '';
-  private chatAi: GoogleGenAI | null = null;
   private chatBusy = false;
-  private aiChatGreeted = false;
-  private aiButtonBound = false;
-  private aiContextCache: string | null = null;
+  private chatGreeted = false;
+  private chatButtonBound = false;
   private bodyScrollLockCount = 0;
   private mediaUrlCache = new Map<string, string>();
   private projectVideoObserver: IntersectionObserver | null = null;
@@ -188,7 +163,6 @@ class App {
     const syncDelay = this.isMobileViewport() ? 900 : 500;
     window.setTimeout(() => void this.importBundledSiteBackupIfNeeded(), syncDelay);
     this.startServerSiteSyncWatcher();
-    setTimeout(() => this.getAiContext(), 300);
   }
 
   private loadData() {
@@ -451,7 +425,7 @@ class App {
 
     this.initScrollContainment();
     this.initOutsideClose();
-    this.initAiChat();
+    this.initChat();
 
     window.addEventListener('keydown', (e) => {
       if (this.panelViewerOpen && e.key === 'ArrowLeft') this.movePanelViewer(-1);
@@ -468,11 +442,11 @@ class App {
       const target = event.target as Node | null;
       if (!target) return;
 
-      const aiContainer = document.getElementById('ai-container');
-      if (aiContainer?.contains(target)) return;
+      const chatContainer = document.getElementById('chat-container');
+      if (chatContainer?.contains(target)) return;
 
-      const chatOpen = !document.getElementById('ai-chat-panel')?.classList.contains('hidden');
-      if (chatOpen) this.closeAiChat();
+      const chatOpen = !document.getElementById('chat-panel')?.classList.contains('hidden');
+      if (chatOpen) this.closeChat();
     });
   }
 
@@ -509,240 +483,16 @@ class App {
     if (this.bodyScrollLockCount === 0) document.body.style.overflow = '';
   }
 
-  public initAiChat() {
-    if (process.env.GEMINI_API_KEY) {
-      this.chatAi = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-    }
+  public initChat() {
+    if (this.chatButtonBound) return;
+    this.chatButtonBound = true;
 
-    if (this.aiButtonBound) return;
-    this.aiButtonBound = true;
-
-    document.getElementById('ai-chat-btn')?.addEventListener('click', () => this.toggleAiChat());
-    document.getElementById('ai-chat-close')?.addEventListener('click', () => this.closeAiChat());
-    document.getElementById('ai-chat-form')?.addEventListener('submit', (event) => {
+    document.getElementById('chat-btn')?.addEventListener('click', () => this.toggleChat());
+    document.getElementById('chat-close')?.addEventListener('click', () => this.closeChat());
+    document.getElementById('chat-form')?.addEventListener('submit', (event) => {
       event.preventDefault();
-      void this.sendAiChatMessage();
+      void this.sendChatMessage();
     });
-  }
-
-  private getAiContext() {
-    if (this.aiContextCache) return this.aiContextCache;
-
-    const app = document.getElementById('app')?.cloneNode(true) as HTMLElement | null;
-    app?.querySelector('#admin-modal')?.remove();
-    app?.querySelector('#admin-sidebar')?.remove();
-    app?.querySelector('#admin-overlay')?.remove();
-    app?.querySelector('#toast-container')?.remove();
-
-    const pageText = (app?.textContent || '')
-      .split('\n')
-      .map(line => line.trim())
-      .filter(Boolean)
-      .join('\n');
-
-    const stripMedia = <T extends {image?: string; mediaType?: string}>(item: T) => {
-      const {image, mediaType, ...rest} = item;
-      return mediaType ? {...rest, mediaType} : rest;
-    };
-    const stripProductSection = ({id, image, panels, ...item}: ProductSection) => ({
-      ...item,
-      panels: panels?.map(({id, image, ...panel}) => panel),
-    });
-
-    const structuredData = {
-      company: {
-        name: this.settings.compName,
-        heroTitle: this.settings.heroTitle,
-        description: this.settings.heroSub,
-        stats: {
-          projects: this.settings.s1,
-          experience: this.settings.s2,
-          clients: this.settings.s3,
-        },
-      },
-      contact: this.social,
-      catalog: {
-        services: this.services.map(({id, ...item}) => stripMedia(item)),
-        products: this.products.map(({id, ...item}) => stripMedia(item)),
-        productSections: this.productSections.map(stripProductSection),
-        projects: this.projects.map(({id, ...item}) => stripMedia(item)),
-        equipment: this.transport.map(({id, available, ...item}) => ({...stripMedia(item), available})),
-        laboratory: this.laboratory.map(({id, ...item}) => stripMedia(item)),
-      },
-    };
-    const siteSections = this.extractSiteAiData();
-    const sitePrompt = this.buildSiteAiPrompt(siteSections);
-    const siteKnowledge = this.buildCompleteSiteKnowledge();
-
-    const compactJson = JSON.stringify(structuredData);
-    const full = [
-      'OQQUSH BETON SAYTIDA KO\'RINADIGAN ASOSIY MATN:',
-      pageText.slice(0, 9000),
-      '',
-      siteKnowledge,
-      '',
-      'OQQUSH BETON KOMPANIYASI KATALOGI VA ADMIN MA\'LUMOTLARI IXCHAM JSON:',
-      compactJson,
-    ].join('\n');
-    this.aiContextCache = full;
-    return this.aiContextCache;
-  }
-
-  private buildCompleteSiteKnowledge() {
-    const lines = [
-      'OQQUSH BETON TO\'LIQ SAYT BILIM BAZASI:',
-      `Kompaniya: ${this.settings.compName}`,
-      `Bosh sahifa sarlavhasi: ${this.settings.heroTitle}`,
-      `Izoh: ${this.settings.heroSub}`,
-      `Statistika: loyihalar ${this.settings.s1}, tajriba ${this.settings.s2}, mijozlar ${this.settings.s3}`,
-      '',
-      'ALOQA:',
-      `Telefonlar: ${this.social.ph || 'ko\'rsatilmagan'}`,
-      `Telegram: ${this.social.tg || 'ko\'rsatilmagan'}`,
-      `Instagram: ${this.social.ig || 'ko\'rsatilmagan'}`,
-      `YouTube: ${this.social.yt || 'ko\'rsatilmagan'}`,
-      `Facebook: ${this.social.fb || 'ko\'rsatilmagan'}`,
-      '',
-      'XIZMATLAR:',
-      ...this.services.map((item, index) => `${index + 1}. ${item.name} - ${item.description}`),
-      '',
-      'MAHSULOTLAR:',
-      ...this.products.map((item, index) => `${index + 1}. ${item.name} - ${item.description.replace(/\n+/g, '; ')}`),
-      '',
-      'MAHSULOT BO\'LIMLARI VA PANELLARI:',
-      ...this.productSections.flatMap(section => [
-        `BO'LIM: ${section.name} - ${section.description?.replace(/\n+/g, '; ') || ''}`,
-        ...(section.panels || []).map((panel, index) => `  ${index + 1}. ${panel.name} - ${panel.description.replace(/\n+/g, '; ')}${panel.meta ? `; ${panel.meta}` : ''}`),
-      ]),
-      '',
-      'TEXNIKA:',
-      ...this.transport.map((item, index) => `${index + 1}. ${item.name} - ${item.specs.replace(/\n+/g, '; ')}; holati: ${item.available ? 'Mavjud' : 'Mavjud emas'}`),
-      '',
-      'LABORATORIYA:',
-      ...this.laboratory.map((item, index) => `${index + 1}. ${item.name} - ${item.description}`),
-      '',
-      'BAJARILGAN ISHLAR:',
-      ...this.projects.map((item, index) => `${index + 1}. ${item.name} - ${item.location}, ${item.year}`),
-    ];
-
-    return lines.join('\n');
-  }
-
-  private extractSiteAiData(): SiteAiSection[] {
-    return Array.from(document.querySelectorAll<HTMLElement>('[data-section]')).map(section => ({
-      id: section.dataset.section || section.id,
-      title: section.dataset.title || section.querySelector('h1,h2,h3')?.textContent?.trim() || section.id,
-      route: section.dataset.route || null,
-      keywords: this.splitKeywords(section.dataset.keywords || ''),
-      panels: Array.from(section.querySelectorAll<HTMLElement>('[data-panel]')).map(panel => ({
-        id: panel.dataset.panel || '',
-        title: panel.querySelector<HTMLElement>('[data-panel-title]')?.textContent?.trim() || panel.dataset.title || '',
-        content: panel.querySelector<HTMLElement>('[data-panel-content]')?.textContent?.trim()
-          || panel.dataset.aiContent
-          || panel.textContent?.trim()
-          || '',
-        keywords: this.splitKeywords(panel.dataset.keywords || ''),
-      })).filter(panel => panel.id && panel.title),
-    })).filter(section => section.id && section.title);
-  }
-
-  private buildAiKeywordMap(sections = this.extractSiteAiData()) {
-    const map: Record<string, {type: 'panel' | 'section'; id: string}> = {};
-    const wordTargets = new Map<string, {type: 'panel' | 'section'; id: string}[]>();
-    const addFull = (value: string, target: {type: 'panel' | 'section'; id: string}) => {
-      const normalized = this.normalizeVoiceCommand(value);
-      if (!normalized || normalized.length < 2) return;
-      map[normalized] = target;
-      normalized.split(/\s+/).forEach(word => {
-        if (word.length <= 2) return;
-        wordTargets.set(word, [...(wordTargets.get(word) || []), target]);
-      });
-    };
-
-    sections.forEach(section => {
-      const sectionTarget = {type: 'section' as const, id: section.id};
-      addFull(section.title, sectionTarget);
-      section.keywords.forEach(keyword => addFull(keyword, sectionTarget));
-      section.panels.forEach(panel => {
-        const panelTarget = {type: 'panel' as const, id: panel.id};
-        addFull(panel.title, panelTarget);
-        panel.keywords.forEach(keyword => addFull(keyword, panelTarget));
-      });
-    });
-
-    this.getAllPanelKeywordEntries().forEach(entry => {
-      const panelTarget = {type: 'panel' as const, id: entry.id};
-      entry.keywords.forEach(keyword => addFull(keyword, panelTarget));
-    });
-
-    wordTargets.forEach((targets, word) => {
-      const unique = Array.from(new Map(targets.map(target => [`${target.type}:${target.id}`, target])).values());
-      if (unique.length === 1) map[word] = unique[0];
-    });
-
-    return map;
-  }
-
-  private buildAssistantRolePrompt(userInput: string) {
-    const sections = this.extractSiteAiData();
-    const keywordMap = this.buildAiKeywordMap(sections);
-    const panelKeywords = Array.from(new Set(Object.keys(keywordMap)))
-      .filter(keyword => keyword.length > 2)
-      .sort((a, b) => a.localeCompare(b))
-      .join(', ');
-
-    return `Sizning vazifangiz quyidagi kalit so'zlar doirasida javob berish: ${panelKeywords}.
-Agar foydalanuvchi savoli ushbu mavzulardan tashqarida bo'lsa, uni Oqqush Beton saytidagi eng yaqin mavjud bo'lim yoki panel bilan bog'lashga urinib ko'ring, ammo noto'g'ri ma'lumot o'ylab topmang.
-Agar bog'lab bo'lmasa, "Bu ma'lumot Oqqush Beton ma'lumotlarida ko'rsatilmagan" deb javob bering.
-Foydalanuvchi: ${userInput}`;
-  }
-
-  private buildSiteAiPrompt(sections: SiteAiSection[]) {
-    const keywordMap = this.buildAiKeywordMap(sections);
-    const keywordList = Object.entries(keywordMap)
-      .map(([keyword, value]) => `  "${keyword}" -> ${value.type}:${value.id}`)
-      .join('\n');
-    const lines = [
-      'SAYT TUZILMASI VA AI KALIT SO\'ZLARI:',
-      'AI faqat quyidagi bo\'lim va panellardan foydalanadi.',
-      'Siz ma\'lumot beruvchi AI operatorisiz. Saytda hech qanday bo\'lim yoki panel ochmang.',
-      'BO\'LIM KEY-ACTION:',
-      'Foydalanuvchi bo\'lim nomini aytsa shu bo\'lim ma\'lumotini o\'qing.',
-      'Home, Asosiy, Texnika, Xizmatlar, Aloqa kabi bo\'lim nomlari aytilsa ham ekranda o\'tish qilmang.',
-      '',
-      'PANEL KEY-ACTION:',
-      'Foydalanuvchi "haqida ma\'lumot ber", "ma\'lumot ber", "tushuntir" desa yoki aniq mahsulot/panel nomini ma\'lumot maqsadida so\'rasa faqat o\'sha panel ma\'lumotini o\'qing.',
-      'Hech narsani ekranda ochmang; faqat ma\'lumotni o\'qing.',
-      'Bo\'lim haqida ma\'lumot so\'ralganda shu bo\'limdagi ma\'lumotlarni oddiy matn qilib ayting.',
-      'Chat tarixini unutib boring: faqat oxirgi buyruqqa amal qiling.',
-      'Javob 50-60 so\'zdan oshmasin.',
-      '',
-      'Panel va bo\'lim kalitlari:',
-      'KALIT SO\'ZLAR RO\'YXATI:',
-      keywordList,
-      '',
-    ];
-
-    sections.forEach(section => {
-      lines.push(`BO'LIM: "${section.title}" (id: ${section.id})`);
-      if (section.keywords.length) lines.push(`  Kalit so'zlar: ${section.keywords.join(', ')}`);
-      section.panels.forEach(panel => {
-        lines.push(`  MA'LUMOT: "${panel.title}" (id: ${panel.id})`);
-        if (panel.keywords.length) lines.push(`    Kalit so'zlar: ${panel.keywords.join(', ')}`);
-        if (panel.content) lines.push(`    Ma'lumot: ${panel.content.replace(/\s+/g, ' ').slice(0, 280)}`);
-      });
-    });
-
-    lines.push(
-      'MUHIM QOIDALAR:',
-      '1. Biror panel yoki bo\'lim so\'ralganda ma\'lumot functionini chaqir.',
-      '2. Function response ichidagi contentni o\'qi.',
-      '3. Hech qachon saytni scroll qilma, panel ochma yoki modal ochma.',
-      '4. Foydalanuvchi "to\'xtat" desa jim tur.',
-      '5. Content ichidagi matndan tashqariga chiqma.',
-    );
-
-    return lines.join('\n');
   }
 
   private resolveSectionDomId(sectionId: string) {
@@ -827,25 +577,6 @@ Foydalanuvchi: ${userInput}`;
     return null;
   }
 
-  private invalidateAiContext() {
-    this.aiContextCache = null;
-  }
-
-  private withTimeout<T>(promise: Promise<T>, ms: number, message: string) {
-    return new Promise<T>((resolve, reject) => {
-      const timer = window.setTimeout(() => reject(new Error(message)), ms);
-      promise
-        .then(value => {
-          window.clearTimeout(timer);
-          resolve(value);
-        })
-        .catch(error => {
-          window.clearTimeout(timer);
-          reject(error);
-        });
-    });
-  }
-
   private showAnimatedModal(id: string) {
     const modal = document.getElementById(id);
     const card = modal?.firstElementChild as HTMLElement | null;
@@ -880,23 +611,23 @@ Foydalanuvchi: ${userInput}`;
     }, 300);
   }
 
-  private toggleAiChat() {
-    const panel = document.getElementById('ai-chat-panel');
+  private toggleChat() {
+    const panel = document.getElementById('chat-panel');
     panel?.classList.toggle('hidden');
     if (!panel?.classList.contains('hidden')) {
-      this.greetAiChat();
-      setTimeout(() => (document.getElementById('ai-chat-input') as HTMLInputElement | null)?.focus(), 20);
+      this.greetChat();
+      setTimeout(() => (document.getElementById('chat-input') as HTMLInputElement | null)?.focus(), 20);
     }
   }
 
-  private closeAiChat() {
-    document.getElementById('ai-chat-panel')?.classList.add('hidden');
+  private closeChat() {
+    document.getElementById('chat-panel')?.classList.add('hidden');
   }
 
-  private greetAiChat() {
-    if (this.aiChatGreeted) return;
-    this.aiChatGreeted = true;
-    this.appendAiChatMessage('Assalomu aleykum, men Oqqush Beton kompaniyasining virtual yordamchisiman. Qanday yordam bera olaman?', 'assistant');
+  private greetChat() {
+    if (this.chatGreeted) return;
+    this.chatGreeted = true;
+    this.appendChatMessage('Assalomu aleykum, men Oqqush Beton kompaniyasining virtual yordamchisiman. Qanday yordam bera olaman?', 'assistant');
   }
 
   private userAskedPanelOpen(text: string) {
@@ -1216,13 +947,6 @@ Foydalanuvchi: ${userInput}`;
     return entries;
   }
 
-  private splitKeywords(value: string) {
-    return value
-      .split(',')
-      .map(item => item.trim())
-      .filter(Boolean);
-  }
-
   private resolveTransportAliasTarget(text: string) {
     const aliases = [
       {index: 0, words: ['beton nasos', 'beton nassos', 'nasos']},
@@ -1436,64 +1160,36 @@ Foydalanuvchi: ${userInput}`;
     return window.matchMedia('(max-width: 767px)').matches;
   }
 
-  private async sendAiChatMessage() {
-    const input = document.getElementById('ai-chat-input') as HTMLInputElement | null;
+  private sendChatMessage() {
+    const input = document.getElementById('chat-input') as HTMLInputElement | null;
     const text = input?.value.trim();
     if (!text || this.chatBusy) return;
 
     input.value = '';
     this.chatBusy = true;
-    this.appendAiChatMessage(text, 'user');
-    const thinking = this.appendAiChatMessage('Javob tayyorlanmoqda...', 'assistant');
+    this.appendChatMessage(text, 'user');
+    const thinking = this.appendChatMessage('Javob tayyorlanmoqda...', 'assistant');
 
-    try {
+    const answer = this.buildChatAnswer(text);
+    this.renderAssistantMessage(thinking, answer);
+    this.chatBusy = false;
+    this.scrollChatToBottom();
+  }
 
-      if (!this.chatAi) {
-        throw new Error('Gemini API key topilmadi');
-      }
+  private buildChatAnswer(text: string) {
+    const normalized = this.normalizeVoiceCommand(text);
+    const localAnswer = this.buildLocalChatAnswer(normalized);
+    if (localAnswer) return localAnswer;
 
-      const response = await this.withTimeout(this.chatAi.models.generateContent({
-        model: process.env.GEMINI_CHAT_MODEL || 'gemini-2.5-flash',
-        contents: text,
-        config: {
-          temperature: 0,
-          topP: 0.1,
-          maxOutputTokens: 190,
-          systemInstruction: `Siz Oqqush Beton kompaniyasining yordamchisisiz.
-${this.buildAssistantRolePrompt(text)}
-Mijoz bilan kompaniya nomidan gaplashing. "Saytda bor" demang; "Oqqush Beton kompaniyasida bor", "bizda mavjud", "kompaniyamiz taklif qiladi" kabi ifodalardan foydalaning.
-Mahsulotlar, texnikalar, xizmatlar, loyihalar va laboratoriya bo'limlariga to'liq kirishingiz bor: ular quyidagi JSON katalogda berilgan.
-Faqat quyidagi kompaniya/sayt kontekstidagi ma'lumotlardan foydalaning. Har bir javob matn va JSON ma'lumotlariga sodiq bo'lsin.
-Saytda yozilgan nom, raqam, birlik, tinish belgisi va iboralarni o'zgartirmang.
-Kontekstdagi matnni izohlab kengaytirmang, yangi afzallik, narx, muddat, kafolat yoki texnik ma'lumot qo'shmang.
-Kontekstda yo'q ma'lumotni taxmin qilmang, internetdan yoki umumiy bilimingizdan qo'shmang.
-Agar mijoz kontekstda yo'q narsani so'rasa: "Bu ma'lumot Oqqush Beton ma'lumotlarida ko'rsatilmagan" deb javob bering.
-O'zbek tilida qisqa va aniq javob bering.
-"Mijoz:" yoki "Javob:" so'zlarini yozmang.
-Agar bir nechta ma'lumot sanalsa, har birini yangi qatordan shu formatda yozing:
-1. **NOMI** - ma'lumot
-2. **NOMI** - ma'lumot
-Nom qismi doim **qalin** bo'lsin. Chiziqchadan keyin faqat tegishli ma'lumot yozilsin.
-
-Oqqush Beton ma'lumotlari:
-${this.getAiContext()}`,
-        },
-      }), 12000, 'AI javobi sekinlashdi. Qayta urinib ko\'ring.');
-
-      this.renderAssistantMessage(thinking, response.text || 'Kechirasiz, javob topilmadi.');
-    } catch (error) {
-      console.error('AI chat error:', error);
-      const errorText = error instanceof Error ? error.message : '';
-      const isGeminiLimit = errorText.includes('429') || errorText.toLowerCase().includes('quota');
-
-      this.renderAssistantMessage(thinking, isGeminiLimit
-        ? 'Gemini API limiti tugagan. Keyinroq qayta urinib ko\'ring yoki yangi Gemini API key qo\'ying.'
-        : 'Xatolik yuz berdi. Keyinroq qayta urinib ko\'ring.');
-      this.toast('AI chat ulanishida xato', true);
-    } finally {
-      this.chatBusy = false;
-      this.scrollAiChatToBottom();
+    if (['salom', 'assalom', 'assalomu alaykum', 'assalomu aleykum'].some(word => normalized.includes(word))) {
+      return 'Assalomu aleykum. Oqqush Beton haqida qaysi bo\'lim ma\'lumotini bilmoqchisiz? Masalan: mahsulotlar, texnika, laboratoriya, xizmatlar yoki aloqa.';
     }
+
+    if (['rahmat', 'raxmat', 'tashakkur'].some(word => normalized.includes(word))) {
+      return 'Arzimaydi. Oqqush Beton bo\'limlari yoki mahsulotlari haqida yana savol yozishingiz mumkin.';
+    }
+
+    return 'Bu ma\'lumot Oqqush Beton ma\'lumotlarida ko\'rsatilmagan. Mahsulotlar, texnika, laboratoriya, xizmatlar, loyihalar yoki aloqa haqida so\'rashingiz mumkin.';
   }
 
   private buildLocalChatAnswer(text: string) {
@@ -1619,15 +1315,15 @@ ${this.getAiContext()}`,
     }).join('\n');
   }
 
-  private appendAiChatMessage(text: string, role: 'user' | 'assistant') {
-    const messages = document.getElementById('ai-chat-messages')!;
+  private appendChatMessage(text: string, role: 'user' | 'assistant') {
+    const messages = document.getElementById('chat-messages')!;
     const bubble = document.createElement('div');
     bubble.className = role === 'user'
       ? 'ml-auto max-w-[85%] rounded-2xl rounded-tr-sm bg-cyan-300 px-4 py-3 text-sm font-semibold text-black'
       : 'max-w-[85%] rounded-2xl rounded-tl-sm bg-white/10 px-4 py-3 text-sm leading-relaxed text-white/85';
     bubble.textContent = text;
     messages.appendChild(bubble);
-    this.scrollAiChatToBottom();
+    this.scrollChatToBottom();
     return bubble;
   }
 
@@ -1673,8 +1369,8 @@ ${this.getAiContext()}`,
     });
   }
 
-  private scrollAiChatToBottom() {
-    const messages = document.getElementById('ai-chat-messages');
+  private scrollChatToBottom() {
+    const messages = document.getElementById('chat-messages');
     if (messages) messages.scrollTop = messages.scrollHeight;
   }
 
@@ -2023,7 +1719,6 @@ ${this.getAiContext()}`,
 
   private saveSlideshows() {
     if (!this.saveLocalJson('oqqush_slideshows', this.slideImages)) return;
-    this.invalidateAiContext();
     this.toast('Fon rasmlari saqlandi. Rasmlar faqat fayl yuklash orqali qo\'shiladi.');
   }
 
@@ -2044,7 +1739,6 @@ ${this.getAiContext()}`,
     if (loaded.length === 0) return;
     this.slideImages[key] = [...(this.slideImages[key] || []), ...loaded];
     if (!this.saveLocalJson('oqqush_slideshows', this.slideImages)) return;
-    this.invalidateAiContext();
     this.initSlideshows();
     this.renderAdminSlideshows();
     this.toast('Rasm yuklandi');
@@ -2053,7 +1747,6 @@ ${this.getAiContext()}`,
   public deleteSlideImage(key: string, index: number) {
     this.slideImages[key] = (this.slideImages[key] || []).filter((_, i) => i !== index);
     if (!this.saveLocalJson('oqqush_slideshows', this.slideImages)) return;
-    this.invalidateAiContext();
     this.initSlideshows();
     this.renderAdminSlideshows();
     this.toast('Rasm o\'chirildi');
@@ -2080,7 +1773,6 @@ ${this.getAiContext()}`,
     if (!service) return;
     service.image = image;
     if (!this.saveLocalJson('oqqush_services', this.services)) return;
-    this.invalidateAiContext();
     this.renderAdminServicesList();
     this.render();
     this.toast('Xizmat rasmi yuklandi');
@@ -2093,7 +1785,6 @@ ${this.getAiContext()}`,
     if (!item) return;
     item.image = image;
     if (!this.saveLocalJson('oqqush_lab', this.laboratory)) return;
-    this.invalidateAiContext();
     this.renderAdminLabList();
     this.render();
     this.toast('Laboratoriya rasmi yuklandi');
@@ -2737,7 +2428,6 @@ ${this.getAiContext()}`,
       ph: (document.getElementById('s-ph') as HTMLTextAreaElement).value,
     };
     if (!this.saveLocalJson('oqqush_social', this.social)) return;
-    this.invalidateAiContext();
     this.renderFooter();
     this.toast('Ijtimoiy tarmoqlar saqlandi');
   }
@@ -2767,7 +2457,6 @@ ${this.getAiContext()}`,
     }
 
     if (!this.saveLocalJson('oqqush_products', this.products)) return;
-    this.invalidateAiContext();
     this.hideProdForm();
     this.render();
     this.renderAdminProductsList();
@@ -2854,7 +2543,6 @@ ${this.getAiContext()}`,
     if (confirm('O\'chirilsinmi?')) {
       this.products = this.products.filter(p => p.id !== id);
       if (!this.saveLocalJson('oqqush_products', this.products)) return;
-      this.invalidateAiContext();
       this.render();
       this.renderAdminProductsList();
       this.toast('O\'chirildi');
@@ -2885,7 +2573,6 @@ ${this.getAiContext()}`,
       s3: (document.getElementById('set-s3') as HTMLInputElement).value,
     };
     if (!this.saveLocalJson('oqqush_settings', this.settings)) return;
-    this.invalidateAiContext();
     this.render();
     this.toast('Sozlamalar yangilandi');
   }
@@ -2940,7 +2627,6 @@ ${this.getAiContext()}`,
     if (!this.saveLocalJson('oqqush_projects', this.projects)) {
       return this.toast('Fayl hajmi katta. Kichikroq video yuklang.', true);
     }
-    this.invalidateAiContext();
     this.hideProjectForm();
     this.render();
     this.renderAdminProjectsList();
@@ -2987,7 +2673,6 @@ ${this.getAiContext()}`,
       if (project?.image?.startsWith('idb:')) await this.deleteMediaBlob(project.image);
       this.projects = this.projects.filter(p => p.id !== id);
       if (!this.saveLocalJson('oqqush_projects', this.projects)) return;
-      this.invalidateAiContext();
       this.render();
       this.renderAdminProjectsList();
       this.toast('O\'chirildi');
@@ -3034,7 +2719,6 @@ ${this.getAiContext()}`,
     }
 
     if (!this.saveLocalJson('oqqush_transport', this.transport)) return;
-    this.invalidateAiContext();
     this.hideTransModal();
     this.render();
     this.renderAdminTransportList();
@@ -3058,7 +2742,6 @@ ${this.getAiContext()}`,
     if (confirm('O\'chirilsinmi?')) {
       this.transport = this.transport.filter(t => t.id !== id);
       if (!this.saveLocalJson('oqqush_transport', this.transport)) return;
-      this.invalidateAiContext();
       this.render();
       this.renderAdminTransportList();
       this.toast('O\'chirildi');
@@ -3220,7 +2903,6 @@ ${this.getAiContext()}`,
       this.renderAdminLabList();
     }
 
-    this.invalidateAiContext();
     this.hideContentModal();
     this.render();
     this.toast('Ma\'lumot saqlandi');
@@ -3265,7 +2947,7 @@ ${this.getAiContext()}`,
     this.renderTransport();
     this.renderLaboratory();
     this.renderFooter();
-    this.hydrateAiDataAttributes();
+    this.hydrateChatDataAttributes();
     this.hydrateProjectMediaElements();
   }
 
@@ -3310,7 +2992,7 @@ ${this.getAiContext()}`,
     });
   }
 
-  private hydrateAiDataAttributes() {
+  private hydrateChatDataAttributes() {
     const sections = [
       {domId: 'home', id: 'home', title: 'Bosh sahifa', route: 'home', keywords: 'asosiy sahifa,bosh sahifa,asosiy,home'},
       {domId: 'about', id: 'about', title: 'Biz haqimizda', route: 'about', keywords: 'biz haqimizda,kompaniya tarixi,kompaniya haqida,haqimizda'},
@@ -3343,8 +3025,7 @@ ${this.getAiContext()}`,
       const card = title?.closest<HTMLElement>('.glass');
       if (!card || !title) return;
       card.dataset.panel = panel.id;
-      card.dataset.keywords = this.aiKeywords(panel.name, ...this.panelAliases(panel.id));
-      card.dataset.aiContent = [panel.description, panel.meta].filter(Boolean).join('\n');
+      card.dataset.keywords = this.chatKeywords(panel.name, ...this.panelAliases(panel.id));
       title.setAttribute('data-panel-title', '');
       desc?.setAttribute('data-panel-content', '');
       meta?.setAttribute('data-panel-extra', '');
@@ -3354,14 +3035,13 @@ ${this.getAiContext()}`,
       const card = Array.from(document.querySelectorAll<HTMLElement>('#laboratory .reveal-stagger > .glass'))[index];
       if (!card) return;
       card.dataset.panel = `laboratory-${this.laboratory[index]?.id || index + 1}`;
-      card.dataset.keywords = this.aiKeywords(item.title);
-      card.dataset.aiContent = item.description;
+      card.dataset.keywords = this.chatKeywords(item.title);
       card.querySelector('h4')?.setAttribute('data-panel-title', '');
       card.querySelector('p')?.setAttribute('data-panel-content', '');
     });
   }
 
-  private aiKeywords(...values: string[]) {
+  private chatKeywords(...values: string[]) {
     const keywords = new Set<string>();
     values
       .flatMap(value => value.split(/[\n,.;:|/]+/))
@@ -3379,7 +3059,7 @@ ${this.getAiContext()}`,
     const grid = document.getElementById('products-list-grid');
     if (!grid) return;
     grid.innerHTML = this.products.map((p, index) => `
-      <button type="button" data-panel="product-${this.escapeHtml(p.id)}" data-keywords="${this.escapeHtml(this.aiKeywords(p.name))}" data-ai-content="${this.escapeHtml(p.description)}" onclick="window.app.openPanelCollection('products', ${index})" class="text-center group reveal backdrop-blur-sm bg-white/5 p-8 rounded-3xl border border-white/10 hover:border-white/30 transition-all duration-500 cursor-pointer text-left focus:outline-none focus:ring-2 focus:ring-orange-400/50">
+      <button type="button" data-panel="product-${this.escapeHtml(p.id)}" data-keywords="${this.escapeHtml(this.chatKeywords(p.name))}" onclick="window.app.openPanelCollection('products', ${index})" class="text-center group reveal backdrop-blur-sm bg-white/5 p-8 rounded-3xl border border-white/10 hover:border-white/30 transition-all duration-500 cursor-pointer text-left focus:outline-none focus:ring-2 focus:ring-orange-400/50">
         <div class="aspect-[16/10] overflow-hidden rounded-2xl mb-8">
           <div class="size-full bg-cover bg-center transition-transform duration-700 group-hover:scale-110" style="background-image: url(${this.formatImg(p.image)})"></div>
         </div>
@@ -3457,7 +3137,7 @@ ${this.getAiContext()}`,
     this.projectVideoObserver = null;
     grid.className = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 md:gap-7 reveal-stagger';
     grid.innerHTML = this.projects.map((p, index) => `
-      <div role="button" tabindex="0" data-panel="project-${this.escapeHtml(p.id)}" data-keywords="${this.escapeHtml(this.aiKeywords(p.name))}" data-ai-content="${this.escapeHtml(`${p.location}\n${p.year}`)}" onclick="window.app.openPanelCollection('projects', ${index})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.app.openPanelCollection('projects', ${index})}" class="group relative aspect-[9/16] overflow-hidden rounded-[26px] border border-white/10 bg-white/5 text-left shadow-[0_24px_80px_rgba(0,0,0,0.35)] cursor-pointer focus:outline-none focus:ring-2 focus:ring-orange-400/50 reveal">
+      <div role="button" tabindex="0" data-panel="project-${this.escapeHtml(p.id)}" data-keywords="${this.escapeHtml(this.chatKeywords(p.name))}" onclick="window.app.openPanelCollection('projects', ${index})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.app.openPanelCollection('projects', ${index})}" class="group relative aspect-[9/16] overflow-hidden rounded-[26px] border border-white/10 bg-white/5 text-left shadow-[0_24px_80px_rgba(0,0,0,0.35)] cursor-pointer focus:outline-none focus:ring-2 focus:ring-orange-400/50 reveal">
         <div class="absolute inset-0 bg-black">${this.renderProjectMedia(p, 'card')}</div>
         <div class="pointer-events-none absolute inset-0 bg-gradient-to-t from-black via-black/20 to-black/10"></div>
         <div class="absolute left-4 top-4 flex items-center gap-2 rounded-full border border-white/15 bg-black/45 px-3 py-1.5 backdrop-blur">
@@ -3545,7 +3225,7 @@ ${this.getAiContext()}`,
     const grid = document.getElementById('transport-grid');
     if (!grid) return;
     grid.innerHTML = this.transport.map((t, index) => `
-      <div role="button" tabindex="0" data-panel="${this.escapeHtml(t.id)}" data-keywords="${this.escapeHtml(this.aiKeywords(t.name))}" data-ai-content="${this.escapeHtml(t.specs)}" onclick="window.app.openPanelCollection('transport', ${index})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.app.openPanelCollection('transport', ${index})}" class="glass overflow-hidden group hover:bg-white/5 transition-all duration-500 border border-white/5 flex flex-col p-8 reveal text-left cursor-pointer focus:outline-none focus:ring-2 focus:ring-orange-400/50">
+      <div role="button" tabindex="0" data-panel="${this.escapeHtml(t.id)}" data-keywords="${this.escapeHtml(this.chatKeywords(t.name))}" onclick="window.app.openPanelCollection('transport', ${index})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.app.openPanelCollection('transport', ${index})}" class="glass overflow-hidden group hover:bg-white/5 transition-all duration-500 border border-white/5 flex flex-col p-8 reveal text-left cursor-pointer focus:outline-none focus:ring-2 focus:ring-orange-400/50">
         <div class="aspect-[16/10] overflow-hidden rounded-2xl mb-8 relative">
           <div class="size-full bg-cover bg-center transition-transform duration-700 group-hover:scale-110" style="background-image: url(${this.formatImg(t.image)})"></div>
           <div class="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#0a0a0a] to-transparent"></div>
@@ -3954,7 +3634,6 @@ ${this.getAiContext()}`,
     if (name) {
       this.services.push({ id: Date.now().toString(), name, image: '', description: '' });
       if (!this.saveLocalJson('oqqush_services', this.services)) return;
-      this.invalidateAiContext();
       this.renderAdminServicesList();
       this.render();
     }
@@ -3964,7 +3643,6 @@ ${this.getAiContext()}`,
     if (confirm('O\'chirilsinmi?')) {
       this.services = this.services.filter(s => s.id !== id);
       if (!this.saveLocalJson('oqqush_services', this.services)) return;
-      this.invalidateAiContext();
       this.renderAdminServicesList();
       this.render();
     }
@@ -3975,7 +3653,6 @@ ${this.getAiContext()}`,
     if (name) {
       this.laboratory.push({ id: Date.now().toString(), name, image: '', description: '' });
       if (!this.saveLocalJson('oqqush_lab', this.laboratory)) return;
-      this.invalidateAiContext();
       this.renderAdminLabList();
       this.render();
     }
@@ -3985,7 +3662,6 @@ ${this.getAiContext()}`,
     if (confirm('O\'chirilsinmi?')) {
       this.laboratory = this.laboratory.filter(l => l.id !== id);
       if (!this.saveLocalJson('oqqush_lab', this.laboratory)) return;
-      this.invalidateAiContext();
       this.renderAdminLabList();
       this.render();
     }
@@ -3996,3 +3672,4 @@ ${this.getAiContext()}`,
 document.addEventListener('DOMContentLoaded', () => {
   (window as any).app = new App();
 });
+

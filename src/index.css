@@ -35,11 +35,6 @@
     @apply bg-white/5 border border-white/10 backdrop-blur-[20px] rounded-2xl transition-all duration-300 hover:-translate-y-1;
   }
 
-  .ai-opened {
-    @apply ring-2 ring-cyan-300/80 border-cyan-300/60;
-    box-shadow: 0 0 35px rgba(103, 232, 249, 0.22);
-  }
-
   .btn-primary {
     @apply px-8 py-3 bg-white text-black font-extrabold hover:bg-gray-200 transition-all duration-300 uppercase tracking-widest text-xs flex items-center justify-center gap-2 rounded-lg;
   }
@@ -331,12 +326,12 @@
 
   .admin-scroll,
   #admin-tabs-content,
-  #ai-chat-messages {
+  #chat-messages {
     -webkit-overflow-scrolling: touch;
   }
 
   #admin-modal .glass,
-  #ai-chat-panel,
+  #chat-panel,
   #admin-sidebar {
     backdrop-filter: blur(12px) !important;
   }
@@ -694,7 +689,7 @@
     font-size: 0.75rem;
   }
 
-  #ai-container {
+  #chat-container {
     right: 0.75rem;
     bottom: 0.75rem;
     left: 0.75rem;
@@ -702,17 +697,17 @@
     gap: 0.75rem;
   }
 
-  #ai-chat-panel {
+  #chat-panel {
     width: 100%;
     max-height: min(72svh, 560px);
   }
 
-  #ai-chat-messages {
+  #chat-messages {
     max-height: 42svh;
     min-height: 220px;
   }
 
-  #ai-chat-btn {
+  #chat-btn {
     width: 3.6rem;
     height: 3.6rem;
   }
@@ -740,7 +735,8 @@
     padding-block: 0.75rem;
   }
 
-  #ai-chat-panel {
+  #chat-panel {
     max-height: 76svh;
   }
 }
+
