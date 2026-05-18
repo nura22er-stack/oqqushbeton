@@ -60,6 +60,8 @@ export class PhoneAgentWidget {
   private ringingNodes = new Set<OscillatorNode>();
   private ringTimers = new Map<OscillatorNode, number>();
   private playbackSources = new Set<AudioBufferSourceNode>();
+  private endingAfterFarewell = false;
+  private farewellCloseTimer: number | null = null;
 
   init() {
     if (this.bound) return;
@@ -262,6 +264,10 @@ ${this.websiteKnowledge || this.collectWebsiteKnowledge()}`;
       this.setStatus('Tinglamoqda...');
       this.setHint(`Siz: ${content.inputTranscription.text}`);
       this.setMicActive(true);
+      if (this.shouldEndByKeyword(content.inputTranscription.text)) {
+        this.startFarewellAndClose();
+        return;
+      }
     }
     if (content?.outputTranscription?.text) {
       this.setStatus('Javob bermoqda...');
@@ -279,6 +285,7 @@ ${this.websiteKnowledge || this.collectWebsiteKnowledge()}`;
       this.setStatus('Tinglamoqda...');
       this.setMicActive(!this.muted);
       window.setTimeout(() => this.stopWaves(), 500);
+      if (this.endingAfterFarewell) this.scheduleCloseAfterPlayback();
     }
   }
 
@@ -293,6 +300,52 @@ ${this.websiteKnowledge || this.collectWebsiteKnowledge()}`;
         turnComplete: true,
       },
     }));
+  }
+
+  private shouldEndByKeyword(text: string) {
+    if (this.endingAfterFarewell) return false;
+    const normalized = this.normalizeVoiceText(text);
+    return /\b(rahmat|raxmat|rakhmat|tashakkur|toxta|tokhta|tuxta|tohtat|toxtang|stop)\b/.test(normalized);
+  }
+
+  private normalizeVoiceText(text: string) {
+    return text
+      .toLowerCase()
+      .replace(/[\u2018\u2019`´]/g, "'")
+      .replace(/o['\u02bb]?/g, 'o')
+      .replace(/g['\u02bb]?/g, 'g')
+      .replace(/[^a-z0-9\s]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  private startFarewellAndClose() {
+    if (!this.calling || this.endingAfterFarewell) return;
+    this.endingAfterFarewell = true;
+    this.muted = true;
+    this.micStream?.getAudioTracks().forEach(track => {
+      track.enabled = false;
+    });
+    this.updateMuteUi();
+    this.setStatus('Yakunlanmoqda...');
+    this.setHint("Ho'p, yana savollaringiz bo'lsa, men shu yerdaman.");
+    this.ws?.send(JSON.stringify({
+      clientContent: {
+        turns: [{
+          role: 'user',
+          parts: [{text: "Suhbatni aynan mana shu gap bilan yakunlang va boshqa hech narsa demang: Ho'p, yana savollaringiz bo'lsa, men shu yerdaman."}],
+        }],
+        turnComplete: true,
+      },
+    }));
+    this.farewellCloseTimer = window.setTimeout(() => this.endCall(), 6500);
+  }
+
+  private scheduleCloseAfterPlayback() {
+    if (!this.endingAfterFarewell) return;
+    if (this.farewellCloseTimer) window.clearTimeout(this.farewellCloseTimer);
+    const delay = Math.max(700, ((this.playbackTime - (this.audioContext?.currentTime || 0)) * 1000) + 450);
+    this.farewellCloseTimer = window.setTimeout(() => this.endCall(), delay);
   }
 
   private startMediaRecorder() {
@@ -371,6 +424,9 @@ ${this.websiteKnowledge || this.collectWebsiteKnowledge()}`;
     this.callToken += 1;
     this.calling = false;
     this.connected = false;
+    this.endingAfterFarewell = false;
+    if (this.farewellCloseTimer) window.clearTimeout(this.farewellCloseTimer);
+    this.farewellCloseTimer = null;
     this.stopRinging();
     this.stopPlayback();
     this.callButton()?.classList.remove('is-ringing');
