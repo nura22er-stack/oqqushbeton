@@ -81,6 +81,7 @@ export class PhoneAgentWidget {
     this.updateCallButtonUi();
     this.setStatus('Ulanmoqda...');
     this.setHint('Telefon chaqirilmoqda...');
+    this.openOverlay();
     this.callButton()?.classList.add('is-ringing');
 
     try {
@@ -89,7 +90,6 @@ export class PhoneAgentWidget {
       await this.ringPattern();
       if (!this.calling || token !== this.callToken) return;
       this.callButton()?.classList.remove('is-ringing');
-      this.openOverlay();
       this.setHint('Mikrofon ruxsatini bering va gapirishga tayyorlaning.');
       await this.connectLive();
       if (!this.calling || token !== this.callToken) this.endCall();
