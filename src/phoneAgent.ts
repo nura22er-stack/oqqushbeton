@@ -5,7 +5,7 @@ const CONFIG = {
   inputRate: 16000,
   outputRate: 24000,
   micChunkSize: 2048,
-  micGain: 1.65,
+  micGain: 1.22,
 };
 
 const PROMPT = `
@@ -108,9 +108,11 @@ export class PhoneAgentWidget {
   }
 
   private async ringPattern() {
-    await this.ringTone(450);
+    await this.ringTone(760);
     if (!this.calling) return;
-    await this.wait(120);
+    await this.wait(240);
+    if (!this.calling) return;
+    await this.ringTone(620);
   }
 
   private ringTone(durationMs: number) {
@@ -172,7 +174,7 @@ export class PhoneAgentWidget {
       this.setHint('Gemini Live ulanishida xatolik yuz berdi.');
     };
     this.ws.onclose = () => {
-      if (this.calling) this.endCall(false);
+      if (this.calling && !this.endingAfterFarewell) this.endCall(false);
     };
   }
 
@@ -305,7 +307,7 @@ ${this.websiteKnowledge || this.collectWebsiteKnowledge()}`;
   private shouldEndByKeyword(text: string) {
     if (this.endingAfterFarewell) return false;
     const normalized = this.normalizeVoiceText(text);
-    return /\b(rahmat|raxmat|rakhmat|tashakkur|toxta|tokhta|tuxta|tohtat|toxtang|stop)\b/.test(normalized);
+    return /\b(rahmat|raxmat|rakhmat|tashakkur|toxta|tokhta|tuxta|tohtat|toxtang|xop|hop|hop|yaxshi|yahshi|stop)\b/.test(normalized);
   }
 
   private normalizeVoiceText(text: string) {
@@ -322,6 +324,8 @@ ${this.websiteKnowledge || this.collectWebsiteKnowledge()}`;
   private startFarewellAndClose() {
     if (!this.calling || this.endingAfterFarewell) return;
     this.endingAfterFarewell = true;
+    this.stopPlayback();
+    this.stopWaves();
     this.muted = true;
     this.micStream?.getAudioTracks().forEach(track => {
       track.enabled = false;
@@ -329,16 +333,14 @@ ${this.websiteKnowledge || this.collectWebsiteKnowledge()}`;
     this.updateMuteUi();
     this.setStatus('Yakunlanmoqda...');
     this.setHint("Ho'p, yana savollaringiz bo'lsa, men shu yerdaman.");
-    this.ws?.send(JSON.stringify({
-      clientContent: {
-        turns: [{
-          role: 'user',
-          parts: [{text: "Suhbatni aynan mana shu gap bilan yakunlang va boshqa hech narsa demang: Ho'p, yana savollaringiz bo'lsa, men shu yerdaman."}],
-        }],
-        turnComplete: true,
-      },
-    }));
-    this.farewellCloseTimer = window.setTimeout(() => this.endCall(), 6500);
+    if (this.ws?.readyState === WebSocket.OPEN) {
+      this.ws.send(JSON.stringify({realtimeInput: {audioStreamEnd: true}}));
+      this.ws.close(1000, 'Farewell keyword');
+    }
+    this.ws = null;
+    this.connected = false;
+    this.speakFarewellLocally();
+    this.farewellCloseTimer = window.setTimeout(() => this.endCall(false), 3200);
   }
 
   private scheduleCloseAfterPlayback() {
@@ -346,6 +348,26 @@ ${this.websiteKnowledge || this.collectWebsiteKnowledge()}`;
     if (this.farewellCloseTimer) window.clearTimeout(this.farewellCloseTimer);
     const delay = Math.max(700, ((this.playbackTime - (this.audioContext?.currentTime || 0)) * 1000) + 450);
     this.farewellCloseTimer = window.setTimeout(() => this.endCall(), delay);
+  }
+
+  private speakFarewellLocally() {
+    const synth = window.speechSynthesis;
+    if (!synth || typeof SpeechSynthesisUtterance === 'undefined') return;
+    synth.cancel();
+    const utterance = new SpeechSynthesisUtterance("Ho'p, yana savollaringiz bo'lsa, men shu yerdaman.");
+    utterance.lang = 'uz-UZ';
+    utterance.rate = 1.03;
+    utterance.pitch = 1;
+    utterance.volume = 1;
+    utterance.onstart = () => this.startWaves();
+    utterance.onend = () => {
+      this.stopWaves();
+      if (this.calling && this.endingAfterFarewell) {
+        if (this.farewellCloseTimer) window.clearTimeout(this.farewellCloseTimer);
+        this.farewellCloseTimer = window.setTimeout(() => this.endCall(false), 350);
+      }
+    };
+    synth.speak(utterance);
   }
 
   private startMediaRecorder() {
@@ -427,6 +449,7 @@ ${this.websiteKnowledge || this.collectWebsiteKnowledge()}`;
     this.endingAfterFarewell = false;
     if (this.farewellCloseTimer) window.clearTimeout(this.farewellCloseTimer);
     this.farewellCloseTimer = null;
+    window.speechSynthesis?.cancel();
     this.stopRinging();
     this.stopPlayback();
     this.callButton()?.classList.remove('is-ringing');
@@ -543,7 +566,7 @@ ${this.websiteKnowledge || this.collectWebsiteKnowledge()}`;
 
   private cleanMicSample(value: number) {
     const boosted = Math.abs(value) < 0.003 ? 0 : value * CONFIG.micGain;
-    return Math.max(-1, Math.min(1, boosted));
+    return Math.tanh(boosted * 1.15) / Math.tanh(1.15);
   }
 
   private audioLevel(samples: Float32Array) {
