@@ -162,7 +162,7 @@ class App {
     this.initAnimations();
     this.render();
     this.migrateStoredImages();
-    const syncDelay = this.isMobileViewport() ? 900 : 500;
+    const syncDelay = this.isMobileViewport() ? 2600 : 2200;
     window.setTimeout(() => void this.importBundledSiteBackupIfNeeded(), syncDelay);
     this.startServerSiteSyncWatcher();
   }
@@ -1467,7 +1467,7 @@ class App {
       const sectionEl = sec as HTMLElement;
       const isPrioritySection = sectionEl.id === 'home' || sectionEl.id === 'about' || sectionEl.getBoundingClientRect().top < window.innerHeight * 1.4;
       
-      const imageWidth = isMobile ? 1200 : 2400;
+      const imageWidth = isMobile ? 900 : 1800;
       const images = this.slideImages[group].map(img => this.formatImg(img, imageWidth)).filter(Boolean).reverse();
       const container = sec.querySelector('.slide-container');
       if (!container || images.length === 0) return;
@@ -2523,7 +2523,7 @@ class App {
   private formatImg(img: string | undefined | null, w = 800) {
     if (!img) return '';
     if (typeof img !== 'string') return '';
-    if (img.startsWith('photo-')) return `https://images.unsplash.com/${img}?w=${w}&auto=format&fit=crop`;
+    if (img.startsWith('photo-')) return `https://images.unsplash.com/${img}?w=${w}&auto=format&fit=crop&q=72`;
     return img;
   }
 
