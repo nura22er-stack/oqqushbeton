@@ -32,8 +32,10 @@ async def handle_client(client) -> None:
         async with websockets.connect(
             upstream_url,
             max_size=16 * 1024 * 1024,
+            max_queue=8,
             ping_interval=20,
             ping_timeout=20,
+            compression=None,
         ) as upstream:
             client_to_upstream = asyncio.create_task(relay(client, upstream))
             upstream_to_client = asyncio.create_task(relay(upstream, client))
@@ -64,8 +66,10 @@ async def main() -> None:
         HOST,
         PORT,
         max_size=16 * 1024 * 1024,
+        max_queue=8,
         ping_interval=20,
         ping_timeout=20,
+        compression=None,
     ):
         print(f"Gemini Live proxy listening on {HOST}:{PORT}", flush=True)
         await stop_event.wait()

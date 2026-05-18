@@ -4,6 +4,8 @@ const CONFIG = {
   voice: 'Charon',
   inputRate: 16000,
   outputRate: 24000,
+  micChunkSize: 2048,
+  micGain: 1.65,
 };
 
 const PROMPT = `
@@ -104,11 +106,9 @@ export class PhoneAgentWidget {
   }
 
   private async ringPattern() {
-    await this.ringTone(2000);
+    await this.ringTone(450);
     if (!this.calling) return;
-    await this.wait(1500);
-    if (!this.calling) return;
-    await this.ringTone(2000);
+    await this.wait(120);
   }
 
   private ringTone(durationMs: number) {
@@ -151,9 +151,15 @@ export class PhoneAgentWidget {
 
   private async connectLive() {
     this.micStream = await navigator.mediaDevices.getUserMedia({
-      audio: {channelCount: 1, echoCancellation: true, noiseSuppression: true, autoGainControl: true},
+      audio: {
+        channelCount: {ideal: 1},
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+        sampleRate: {ideal: 48000},
+        sampleSize: {ideal: 16},
+      },
     });
-    this.startMediaRecorder();
     this.startMicStreamer();
 
     this.ws = new WebSocket(CONFIG.websocketUrl);
@@ -298,16 +304,16 @@ ${this.websiteKnowledge || this.collectWebsiteKnowledge()}`;
 
   private startMicStreamer() {
     if (!this.micStream) return;
-    this.inputContext = new ((window.AudioContext || (window as any).webkitAudioContext) as typeof AudioContext)({sampleRate: CONFIG.inputRate});
+    this.inputContext = new ((window.AudioContext || (window as any).webkitAudioContext) as typeof AudioContext)({latencyHint: 'interactive'});
     this.source = this.inputContext.createMediaStreamSource(this.micStream);
-    this.processor = this.inputContext.createScriptProcessor(4096, 1, 1);
+    this.processor = this.inputContext.createScriptProcessor(CONFIG.micChunkSize, 1, 1);
     this.silentGain = this.inputContext.createGain();
     this.silentGain.gain.value = 0;
     this.processor.onaudioprocess = event => {
       if (!this.ws || this.ws.readyState !== WebSocket.OPEN || !this.connected || this.muted) return;
-      if (this.ws.bufferedAmount > 512 * 1024) return;
+      if (this.ws.bufferedAmount > 192 * 1024) return;
       const input = event.inputBuffer.getChannelData(0);
-      const pcm16 = this.float32ToPcm16(input);
+      const pcm16 = this.resampleToPcm16(input, event.inputBuffer.sampleRate, CONFIG.inputRate);
       this.ws.send(JSON.stringify({
         realtimeInput: {
           audio: {
@@ -457,10 +463,31 @@ ${this.websiteKnowledge || this.collectWebsiteKnowledge()}`;
   private float32ToPcm16(input: Float32Array) {
     const pcm = new Int16Array(input.length);
     for (let i = 0; i < input.length; i += 1) {
-      const sample = Math.max(-1, Math.min(1, input[i]));
+      const sample = this.cleanMicSample(input[i]);
       pcm[i] = sample < 0 ? sample * 0x8000 : sample * 0x7fff;
     }
     return pcm;
+  }
+
+  private resampleToPcm16(input: Float32Array, sourceRate: number, targetRate: number) {
+    if (!sourceRate || Math.abs(sourceRate - targetRate) < 1) return this.float32ToPcm16(input);
+    const ratio = sourceRate / targetRate;
+    const outputLength = Math.max(1, Math.round(input.length / ratio));
+    const pcm = new Int16Array(outputLength);
+    for (let i = 0; i < outputLength; i += 1) {
+      const sourceIndex = i * ratio;
+      const left = Math.floor(sourceIndex);
+      const right = Math.min(left + 1, input.length - 1);
+      const weight = sourceIndex - left;
+      const sample = this.cleanMicSample(input[left] * (1 - weight) + input[right] * weight);
+      pcm[i] = sample < 0 ? sample * 0x8000 : sample * 0x7fff;
+    }
+    return pcm;
+  }
+
+  private cleanMicSample(value: number) {
+    const boosted = Math.abs(value) < 0.003 ? 0 : value * CONFIG.micGain;
+    return Math.max(-1, Math.min(1, boosted));
   }
 
   private audioLevel(samples: Float32Array) {
