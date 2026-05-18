@@ -1467,7 +1467,7 @@ class App {
       const sectionEl = sec as HTMLElement;
       const isPrioritySection = sectionEl.id === 'home' || sectionEl.id === 'about' || sectionEl.getBoundingClientRect().top < window.innerHeight * 1.4;
       
-      const imageWidth = isMobile ? 720 : 1800;
+      const imageWidth = isMobile ? 768 : 1800;
       const images = this.slideImages[group].map(img => this.formatImg(img, imageWidth, isMobile)).filter(Boolean).reverse();
       const container = sec.querySelector('.slide-container');
       if (!container || images.length === 0) return;
@@ -2525,8 +2525,8 @@ class App {
     if (typeof img !== 'string') return '';
     if (img.startsWith('photo-')) {
       const quality = w <= 900 ? 58 : 72;
-      const mobileParams = mobileBackground ? '&h=1280&crop=entropy' : '';
-      return `https://images.unsplash.com/${img}?w=${w}${mobileParams}&auto=format&fit=crop&q=${quality}`;
+      const mobileParams = mobileBackground ? '&h=1365&fit=crop&crop=entropy' : '&fit=crop';
+      return `https://images.unsplash.com/${img}?w=${w}${mobileParams}&auto=format&q=${quality}`;
     }
     return img;
   }
