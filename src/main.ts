@@ -1467,7 +1467,7 @@ class App {
       const sectionEl = sec as HTMLElement;
       const isPrioritySection = sectionEl.id === 'home' || sectionEl.id === 'about' || sectionEl.getBoundingClientRect().top < window.innerHeight * 1.4;
       
-      const imageWidth = isMobile ? 900 : 1800;
+      const imageWidth = isMobile ? 640 : 1800;
       const images = this.slideImages[group].map(img => this.formatImg(img, imageWidth)).filter(Boolean).reverse();
       const container = sec.querySelector('.slide-container');
       if (!container || images.length === 0) return;
@@ -1480,7 +1480,7 @@ class App {
         overlay.className = 'absolute inset-0 z-[1] bg-black/10';
         container.appendChild(div);
         container.appendChild(overlay);
-        this.queueBackgroundLoad(div, images[0], sectionEl, isPrioritySection);
+        this.queueBackgroundLoad(div, images[0], sectionEl, true);
         this.hydrateProjectMediaElements(container);
         return;
       }
@@ -2523,7 +2523,10 @@ class App {
   private formatImg(img: string | undefined | null, w = 800) {
     if (!img) return '';
     if (typeof img !== 'string') return '';
-    if (img.startsWith('photo-')) return `https://images.unsplash.com/${img}?w=${w}&auto=format&fit=crop&q=72`;
+    if (img.startsWith('photo-')) {
+      const quality = w <= 900 ? 58 : 72;
+      return `https://images.unsplash.com/${img}?w=${w}&auto=format&fit=crop&q=${quality}`;
+    }
     return img;
   }
 
