@@ -1467,8 +1467,8 @@ class App {
       const sectionEl = sec as HTMLElement;
       const isPrioritySection = sectionEl.id === 'home' || sectionEl.id === 'about' || sectionEl.getBoundingClientRect().top < window.innerHeight * 1.4;
       
-      const imageWidth = isMobile ? 640 : 1800;
-      const images = this.slideImages[group].map(img => this.formatImg(img, imageWidth)).filter(Boolean).reverse();
+      const imageWidth = isMobile ? 720 : 1800;
+      const images = this.slideImages[group].map(img => this.formatImg(img, imageWidth, isMobile)).filter(Boolean).reverse();
       const container = sec.querySelector('.slide-container');
       if (!container || images.length === 0) return;
       container.innerHTML = '';
@@ -2520,12 +2520,13 @@ class App {
     this.hydrateProjectMediaElements(container);
   }
 
-  private formatImg(img: string | undefined | null, w = 800) {
+  private formatImg(img: string | undefined | null, w = 800, mobileBackground = false) {
     if (!img) return '';
     if (typeof img !== 'string') return '';
     if (img.startsWith('photo-')) {
       const quality = w <= 900 ? 58 : 72;
-      return `https://images.unsplash.com/${img}?w=${w}&auto=format&fit=crop&q=${quality}`;
+      const mobileParams = mobileBackground ? '&h=1280&crop=entropy' : '';
+      return `https://images.unsplash.com/${img}?w=${w}${mobileParams}&auto=format&fit=crop&q=${quality}`;
     }
     return img;
   }
